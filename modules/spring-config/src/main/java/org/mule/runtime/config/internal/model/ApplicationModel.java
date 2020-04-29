@@ -21,6 +21,9 @@ import static org.apache.commons.collections.CollectionUtils.disjunction;
 import static org.mule.runtime.api.component.AbstractComponent.LOCATION_KEY;
 import static org.mule.runtime.api.component.Component.ANNOTATIONS_PROPERTY_NAME;
 import static org.mule.runtime.api.component.ComponentIdentifier.builder;
+import static org.mule.runtime.api.component.TypedComponentIdentifier.ComponentType.OPERATION;
+import static org.mule.runtime.api.component.TypedComponentIdentifier.ComponentType.ROUTER;
+import static org.mule.runtime.api.component.TypedComponentIdentifier.ComponentType.SOURCE;
 import static org.mule.runtime.api.component.TypedComponentIdentifier.ComponentType.UNKNOWN;
 import static org.mule.runtime.api.i18n.I18nMessageFactory.createStaticMessage;
 import static org.mule.runtime.api.util.NameUtils.hyphenize;
@@ -84,8 +87,11 @@ import org.mule.runtime.config.internal.dsl.model.config.PropertiesResolverConfi
 import org.mule.runtime.config.internal.dsl.model.config.RuntimeConfigurationException;
 import org.mule.runtime.config.internal.dsl.model.extension.xml.MacroExpansionModulesModel;
 import org.mule.runtime.config.internal.dsl.processor.ObjectTypeVisitor;
+import org.mule.runtime.config.internal.dsl.spring.CommonBeanDefinitionCreator;
 import org.mule.runtime.core.api.config.ConfigurationException;
 import org.mule.runtime.core.api.extension.MuleExtensionModelProvider;
+import org.mule.runtime.core.api.processor.Processor;
+import org.mule.runtime.core.api.source.MessageSource;
 import org.mule.runtime.core.api.util.ClassUtils;
 import org.mule.runtime.dsl.api.component.ComponentBuildingDefinition;
 import org.mule.runtime.dsl.api.component.config.ComponentConfiguration;
@@ -589,7 +595,21 @@ public class ApplicationModel implements ArtifactAst {
           ObjectTypeVisitor typeDefinitionVisitor = new ObjectTypeVisitor((ComponentModel) componentModel);
           definition.getTypeDefinition().visit(typeDefinitionVisitor);
           // We still have components without extension models
-          ((ComponentModel) componentModel).setType(typeDefinitionVisitor.getType());
+          final Class<?> type = typeDefinitionVisitor.getType();
+          ((ComponentModel) componentModel).setType(type);
+
+          if (ComponentLocationVisitor.BATCH_JOB_COMPONENT_IDENTIFIER.equals(componentModel.getIdentifier())
+              || ComponentLocationVisitor.BATCH_PROCESSS_RECORDS_COMPONENT_IDENTIFIER.equals(componentModel.getIdentifier())) {
+            ((ComponentModel) componentModel).setComponentType(ROUTER);
+          } else
+
+          // if (areMatchingTypes(ErrorHandler.class, type)) {
+          // ((ComponentModel) componentModel).setComponentType(ERROR_HANDLER);
+          if (CommonBeanDefinitionCreator.areMatchingTypes(MessageSource.class, type)) {
+            ((ComponentModel) componentModel).setComponentType(SOURCE);
+          } else if (CommonBeanDefinitionCreator.areMatchingTypes(Processor.class, type)) {
+            ((ComponentModel) componentModel).setComponentType(OPERATION);
+          }
 
           return definition;
         }).orElseGet(() -> {

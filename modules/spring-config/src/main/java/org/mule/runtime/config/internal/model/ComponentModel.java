@@ -20,6 +20,7 @@ import static org.mule.metadata.api.utils.MetadataTypeUtils.getTypeId;
 import static org.mule.runtime.api.component.Component.NS_MULE_DOCUMENTATION;
 import static org.mule.runtime.api.component.Component.NS_MULE_PARSER_METADATA;
 import static org.mule.runtime.api.component.ComponentIdentifier.builder;
+import static org.mule.runtime.api.component.TypedComponentIdentifier.ComponentType.UNKNOWN;
 import static org.mule.runtime.api.meta.ExpressionSupport.NOT_SUPPORTED;
 import static org.mule.runtime.api.meta.ExpressionSupport.SUPPORTED;
 import static org.mule.runtime.api.meta.model.parameter.ParameterRole.BEHAVIOUR;
@@ -43,6 +44,7 @@ import org.mule.metadata.api.model.SimpleType;
 import org.mule.metadata.api.visitor.MetadataTypeVisitor;
 import org.mule.runtime.api.component.ComponentIdentifier;
 import org.mule.runtime.api.component.TypedComponentIdentifier;
+import org.mule.runtime.api.component.TypedComponentIdentifier.ComponentType;
 import org.mule.runtime.api.component.location.ComponentLocation;
 import org.mule.runtime.api.exception.MuleRuntimeException;
 import org.mule.runtime.api.meta.model.config.ConfigurationModel;
@@ -356,7 +358,10 @@ public abstract class ComponentModel {
           .ifPresent(this::setMetadataTypeModelAdapter);
     }
 
-    setComponentType(resolveComponentType((ComponentAst) this, extensionModelHelper));
+    final ComponentType resolvedComponentType = resolveComponentType((ComponentAst) this, extensionModelHelper);
+    if (resolvedComponentType != UNKNOWN || getComponentType() == null) {
+      setComponentType(resolvedComponentType);
+    }
   }
 
   private ParameterGroupModel addInlineGroup(DslElementSyntax elementDsl,
