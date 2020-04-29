@@ -11,13 +11,16 @@ import static org.mule.runtime.dsl.api.component.DslSimpleType.SIMPLE_TYPE_VALUE
 import static org.mule.runtime.dsl.api.component.DslSimpleType.isSimpleType;
 import static org.springframework.beans.factory.support.BeanDefinitionBuilder.genericBeanDefinition;
 
+import org.mule.runtime.ast.api.ComponentAst;
 import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
+import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
 import org.mule.runtime.config.internal.dsl.processor.ObjectTypeVisitor;
 import org.mule.runtime.dsl.api.component.ComponentBuildingDefinition;
 import org.mule.runtime.dsl.api.component.MapEntry;
 import org.mule.runtime.dsl.api.component.TypeDefinition.MapEntryType;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
@@ -54,7 +57,8 @@ class MapEntryBeanDefinitionCreator extends BeanDefinitionCreator {
   private static final String ENTRY_TYPE_VALUE_REF_PARAMETER_NAME = "value-ref";
 
   @Override
-  boolean handleRequest(CreateBeanDefinitionRequest createBeanDefinitionRequest) {
+  boolean handleRequest(Map<ComponentAst, SpringComponentModel2> springComponentModels,
+                        CreateBeanDefinitionRequest createBeanDefinitionRequest) {
     ObjectTypeVisitor objectTypeVisitor = new ObjectTypeVisitor(createBeanDefinitionRequest.getComponentModel());
     createBeanDefinitionRequest.getComponentBuildingDefinition().getTypeDefinition().visit(objectTypeVisitor);
     Class<?> type = objectTypeVisitor.getType();

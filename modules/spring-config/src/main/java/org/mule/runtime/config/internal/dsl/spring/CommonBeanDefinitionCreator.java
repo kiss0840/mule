@@ -29,8 +29,10 @@ import org.mule.runtime.api.component.ComponentIdentifier;
 import org.mule.runtime.api.exception.MuleRuntimeException;
 import org.mule.runtime.api.util.LazyValue;
 import org.mule.runtime.api.util.Pair;
+import org.mule.runtime.ast.api.ComponentAst;
 import org.mule.runtime.ast.api.ComponentMetadataAst;
 import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
+import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
 import org.mule.runtime.config.internal.dsl.processor.ObjectTypeVisitor;
 import org.mule.runtime.config.internal.model.ComponentModel;
 import org.mule.runtime.config.privileged.dsl.BeanDefinitionPostProcessor;
@@ -98,7 +100,8 @@ public class CommonBeanDefinitionCreator extends BeanDefinitionCreator {
   }
 
   @Override
-  public boolean handleRequest(CreateBeanDefinitionRequest request) {
+  public boolean handleRequest(Map<ComponentAst, SpringComponentModel2> springComponentModels,
+                               CreateBeanDefinitionRequest request) {
     SpringComponentModel componentModel = request.getComponentModel();
     ComponentBuildingDefinition buildingDefinition = request.getComponentBuildingDefinition();
     componentModel.setType(retrieveComponentType(componentModel, buildingDefinition));

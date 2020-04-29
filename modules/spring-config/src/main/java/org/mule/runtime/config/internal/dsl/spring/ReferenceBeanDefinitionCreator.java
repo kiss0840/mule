@@ -9,10 +9,13 @@ package org.mule.runtime.config.internal.dsl.spring;
 import static org.mule.runtime.config.internal.model.ApplicationModel.TRANSFORMER_IDENTIFIER;
 
 import org.mule.runtime.api.component.ComponentIdentifier;
+import org.mule.runtime.ast.api.ComponentAst;
 import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
+import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
 import org.mule.runtime.config.internal.dsl.processor.ObjectTypeVisitor;
 import org.mule.runtime.config.internal.model.ComponentModel;
 
+import java.util.Map;
 import java.util.function.Consumer;
 
 import org.springframework.beans.factory.config.RuntimeBeanReference;
@@ -57,7 +60,8 @@ class ReferenceBeanDefinitionCreator extends BeanDefinitionCreator {
   }
 
   @Override
-  boolean handleRequest(CreateBeanDefinitionRequest createBeanDefinitionRequest) {
+  boolean handleRequest(Map<ComponentAst, SpringComponentModel2> springComponentModels,
+                        CreateBeanDefinitionRequest createBeanDefinitionRequest) {
     ComponentModel componentModel = createBeanDefinitionRequest.getComponentModel();
     if (referenceConsumers.containsKey(componentModel.getIdentifier())) {
       referenceConsumers.get(componentModel.getIdentifier()).accept(createBeanDefinitionRequest);

@@ -8,7 +8,9 @@ package org.mule.runtime.config.internal.dsl.spring;
 
 import static java.util.stream.Collectors.toCollection;
 
+import org.mule.runtime.ast.api.ComponentAst;
 import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
+import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
 import org.mule.runtime.config.internal.dsl.processor.ObjectTypeVisitor;
 import org.mule.runtime.dsl.api.component.ComponentBuildingDefinition;
 
@@ -21,7 +23,7 @@ import org.springframework.beans.factory.support.ManagedList;
  * {@code BeanDefinitionCreator} that handles components that define a map in the configuration.
  *
  * <p>
- * 
+ *
  * <pre>
  *  <parsers-test:complex-type-map>
  *      <parsers-test:complex-type-entry key="1">
@@ -38,7 +40,8 @@ import org.springframework.beans.factory.support.ManagedList;
 class MapBeanDefinitionCreator extends BeanDefinitionCreator {
 
   @Override
-  boolean handleRequest(CreateBeanDefinitionRequest createBeanDefinitionRequest) {
+  boolean handleRequest(Map<ComponentAst, SpringComponentModel2> springComponentModels,
+                        CreateBeanDefinitionRequest createBeanDefinitionRequest) {
     SpringComponentModel componentModel = createBeanDefinitionRequest.getComponentModel();
     ObjectTypeVisitor objectTypeVisitor = new ObjectTypeVisitor(componentModel);
     ComponentBuildingDefinition componentBuildingDefinition = createBeanDefinitionRequest.getComponentBuildingDefinition();
