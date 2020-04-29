@@ -26,6 +26,7 @@ import org.mule.runtime.api.component.TypedComponentIdentifier;
 import org.mule.runtime.ast.api.ComponentAst;
 import org.mule.runtime.config.internal.dsl.model.ExtensionModelHelper;
 import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
+import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
 import org.mule.runtime.config.internal.model.ComponentModel;
 import org.mule.runtime.module.extension.internal.runtime.resolver.ValueResolver;
 
@@ -59,10 +60,10 @@ public class ComponentModelHelper {
             : componentModel.getIdentifier());
   }
 
-  public static boolean isAnnotatedObject(ComponentModel componentModel) {
-    return isOfType(componentModel, Component.class)
+  public static boolean isAnnotatedObject(SpringComponentModel2 springComponentModel) {
+    return isOfType(springComponentModel, Component.class)
         // ValueResolver end up generating pojos from the extension whose class is enhanced to have annotations
-        || isOfType(componentModel, ValueResolver.class);
+        || isOfType(springComponentModel, ValueResolver.class);
   }
 
   public static boolean isProcessor(ComponentAst componentModel) {
@@ -93,20 +94,21 @@ public class ComponentModelHelper {
     return componentModel.getComponentType().equals(ON_ERROR);
   }
 
-  private static boolean isOfType(ComponentModel componentModel, Class type) {
-    Class<?> componentModelType = componentModel.getType();
+  private static boolean isOfType(SpringComponentModel2 springComponentModel, Class type) {
+    Class<?> componentModelType = springComponentModel.getType();
     if (componentModelType == null) {
       return false;
     }
     return CommonBeanDefinitionCreator.areMatchingTypes(type, componentModelType);
   }
 
-  public static void addAnnotation(QName annotationKey, Object annotationValue, SpringComponentModel componentModel) {
+  public static void addAnnotation(QName annotationKey, Object annotationValue, SpringComponentModel2 springComponentModel) {
     // TODO MULE-10970 - remove condition once everything is AnnotatedObject.
-    if (!ComponentModelHelper.isAnnotatedObject(componentModel) && !componentModel.getIdentifier().getName().equals("flow-ref")) {
+    if (!ComponentModelHelper.isAnnotatedObject(springComponentModel)
+        && !springComponentModel.getComponent().getIdentifier().getName().equals("flow-ref")) {
       return;
     }
-    BeanDefinition beanDefinition = componentModel.getBeanDefinition();
+    BeanDefinition beanDefinition = springComponentModel.getBeanDefinition();
     if (beanDefinition == null) {
       // This is the case of components that are references
       return;

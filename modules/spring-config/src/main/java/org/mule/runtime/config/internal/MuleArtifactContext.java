@@ -67,6 +67,7 @@ import org.mule.runtime.config.api.dsl.model.ResourceProvider;
 import org.mule.runtime.config.api.dsl.processor.ArtifactConfig;
 import org.mule.runtime.config.internal.dsl.model.ClassLoaderResourceProvider;
 import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
+import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
 import org.mule.runtime.config.internal.dsl.model.config.DefaultConfigurationPropertiesResolver;
 import org.mule.runtime.config.internal.dsl.model.config.EnvironmentPropertiesConfigurationProvider;
 import org.mule.runtime.config.internal.dsl.spring.BeanDefinitionFactory;
@@ -106,6 +107,7 @@ import org.mule.runtime.dsl.api.xml.parser.XmlParsingConfiguration;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -560,6 +562,8 @@ public class MuleArtifactContext extends AbstractRefreshableConfigApplicationCon
     Set<String> alwaysEnabledGeneratedTopLevelComponentsName = new HashSet<>();
 
     List<Pair<String, ComponentAst>> createdComponentModels = new ArrayList<>();
+    Map<ComponentAst, SpringComponentModel2> springComponentModels = new LinkedHashMap<>();
+
     applicationModel.recursiveStream().forEach(cm -> {
       SpringComponentModel componentModel = (SpringComponentModel) cm;
       if (!mustBeRoot || componentModel.isRoot()) {
@@ -567,42 +571,76 @@ public class MuleArtifactContext extends AbstractRefreshableConfigApplicationCon
           return;
         }
 
-        if (componentModel.getNameAttribute() != null && componentModel.isRoot()) {
-          createdComponentModels.add(new Pair<>(componentModel.getNameAttribute(), componentModel));
-        }
-        beanDefinitionFactory
-            .resolveComponentRecursively(null, componentModel, beanFactory,
-                                         (resolvedComponentModel, registry) -> {
-                                           SpringComponentModel resolvedSpringComponentModel =
-                                               (SpringComponentModel) resolvedComponentModel;
-                                           if (resolvedComponentModel.isRoot()) {
-                                             String nameAttribute = resolvedComponentModel.getNameAttribute();
-                                             if (resolvedComponentModel.getIdentifier().equals(CONFIGURATION_IDENTIFIER)) {
-                                               nameAttribute = OBJECT_MULE_CONFIGURATION;
-                                             } else if (nameAttribute == null) {
-                                               // This may be a configuration that does not requires a name.
-                                               nameAttribute = uniqueValue(resolvedSpringComponentModel.getBeanDefinition()
-                                                   .getBeanClassName());
+        componentModel.getComponentId()
+            .ifPresent(componentName -> {
+              if (componentModel.isRoot()) {
+                createdComponentModels.add(new Pair<>(componentName, componentModel));
+              }
+            });
 
-                                               if (alwaysEnabledUnnamedTopLevelComponents
-                                                   .contains(resolvedSpringComponentModel.getIdentifier())) {
-                                                 alwaysEnabledGeneratedTopLevelComponentsName.add(nameAttribute);
-                                                 createdComponentModels
-                                                     .add(new Pair<>(nameAttribute, (ComponentAst) resolvedComponentModel));
-                                               } else if (resolvedSpringComponentModel.getType() != null
-                                                   && TransactionManagerFactory.class
-                                                       .isAssignableFrom(resolvedSpringComponentModel.getType())) {
-                                                 createdComponentModels
-                                                     .add(new Pair<>(nameAttribute, resolvedSpringComponentModel));
-                                               }
-                                             }
-                                             registry.registerBeanDefinition(nameAttribute,
-                                                                             resolvedSpringComponentModel.getBeanDefinition());
-                                             postProcessBeanDefinition(componentModel, registry, nameAttribute);
-                                           }
+        beanDefinitionFactory
+            .resolveComponentRecursively(springComponentModels, null, componentModel, beanFactory,
+                                         (resolvedComponentModel, registry) -> {
+                                           //                                           if (((ComponentModel) resolvedComponentModel.getComponent()).isRoot()) {
+                                           //                                             String nameAttribute =
+                                           //                                                 resolvedComponentModel.getComponent().getComponentId().orElse(null);
+                                           //                                             if (resolvedComponentModel.getComponent().getIdentifier()
+                                           //                                                 .equals(CONFIGURATION_IDENTIFIER)) {
+                                           //                                               nameAttribute = OBJECT_MULE_CONFIGURATION;
+                                           //                                             } else if (nameAttribute == null) {
+                                           //                                               // This may be a configuration that does not requires a name.
+                                           //                                               nameAttribute = uniqueValue(resolvedComponentModel.getBeanDefinition()
+                                           //                                                   .getBeanClassName());
+                                           //
+                                           //                                               if (alwaysEnabledUnnamedTopLevelComponents
+                                           //                                                   .contains(resolvedComponentModel.getComponent().getIdentifier())) {
+                                           //                                                 alwaysEnabledGeneratedTopLevelComponentsName.add(nameAttribute);
+                                           //                                                 createdComponentModels
+                                           //                                                     .add(new Pair<>(nameAttribute, resolvedComponentModel.getComponent()));
+                                           //                                               } else if (resolvedComponentModel.getType() != null
+                                           //                                                   && TransactionManagerFactory.class
+                                           //                                                       .isAssignableFrom(resolvedComponentModel.getType())) {
+                                           //                                                 createdComponentModels
+                                           //                                                     .add(new Pair<>(nameAttribute, resolvedComponentModel.getComponent()));
+                                           //                                               }
+                                           //                                             }
+                                           //                                             registry.registerBeanDefinition(nameAttribute,
+                                           //                                                                             resolvedComponentModel.getBeanDefinition());
+                                           //                                             postProcessBeanDefinition(componentModel, registry, nameAttribute);
+                                           // }
                                          }, null, componentLocator);
 
         componentLocator.addComponentLocation(cm.getLocation());
+      }
+    });
+
+    springComponentModels.values().forEach(resolvedComponentModel -> {
+      if (((ComponentModel) resolvedComponentModel.getComponent()).isRoot()) {
+        String nameAttribute =
+            resolvedComponentModel.getComponent().getComponentId().orElse(null);
+        if (resolvedComponentModel.getComponent().getIdentifier()
+            .equals(CONFIGURATION_IDENTIFIER)) {
+          nameAttribute = OBJECT_MULE_CONFIGURATION;
+        } else if (nameAttribute == null) {
+          // This may be a configuration that does not requires a name.
+          nameAttribute = uniqueValue(resolvedComponentModel.getBeanDefinition()
+              .getBeanClassName());
+
+          if (alwaysEnabledUnnamedTopLevelComponents
+              .contains(resolvedComponentModel.getComponent().getIdentifier())) {
+            alwaysEnabledGeneratedTopLevelComponentsName.add(nameAttribute);
+            createdComponentModels
+                .add(new Pair<>(nameAttribute, resolvedComponentModel.getComponent()));
+          } else if (resolvedComponentModel.getType() != null
+              && TransactionManagerFactory.class
+                  .isAssignableFrom(resolvedComponentModel.getType())) {
+            createdComponentModels
+                .add(new Pair<>(nameAttribute, resolvedComponentModel.getComponent()));
+          }
+        }
+        beanFactory.registerBeanDefinition(nameAttribute,
+                                           resolvedComponentModel.getBeanDefinition());
+        postProcessBeanDefinition((SpringComponentModel) resolvedComponentModel.getComponent(), beanFactory, nameAttribute);
       }
     });
 
@@ -717,6 +755,14 @@ public class MuleArtifactContext extends AbstractRefreshableConfigApplicationCon
    * Forces the registration of instances of {@link TransformerResolver} and {@link Converter} to be created, so that
    * {@link PostRegistrationActionsPostProcessor} can work its magic and add them to the transformation graph
    */
+  // protected static void postProcessBeanDefinition(SpringComponentModel2 resolvedComponent, BeanDefinitionRegistry registry,
+  // String beanName) {
+  // if (Converter.class.isAssignableFrom(resolvedComponent.getType())) {
+  // GenericBeanDefinition converterBeanDefinitionCopy = new GenericBeanDefinition(resolvedComponent.getBeanDefinition());
+  // converterBeanDefinitionCopy.setScope(SPRING_SINGLETON_OBJECT);
+  // registry.registerBeanDefinition(beanName + "-" + "converter", converterBeanDefinitionCopy);
+  // }
+  // }
   protected static void postProcessBeanDefinition(SpringComponentModel resolvedComponent, BeanDefinitionRegistry registry,
                                                   String beanName) {
     if (Converter.class.isAssignableFrom(resolvedComponent.getType())) {
