@@ -10,6 +10,7 @@ import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
 import static java.util.Collections.emptySet;
 import static java.util.Comparator.comparing;
+import static java.util.Objects.requireNonNull;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.stream.Collectors.toList;
@@ -638,8 +639,11 @@ public class MuleArtifactContext extends AbstractRefreshableConfigApplicationCon
             createdComponentModels.add(new Pair<>(nameAttribute, resolvedComponentModel.getComponent()));
           }
         }
+
         beanFactory.registerBeanDefinition(nameAttribute,
-                                           resolvedComponentModel.getBeanDefinition());
+                                           requireNonNull(resolvedComponentModel.getBeanDefinition(),
+                                                          "BeanDefinition null for "
+                                                              + resolvedComponentModel.getComponent().toString()));
         postProcessBeanDefinition(resolvedComponentModel, beanFactory, nameAttribute);
       }
     });

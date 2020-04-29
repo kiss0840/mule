@@ -58,7 +58,7 @@ class ObjectBeanDefinitionCreator extends BeanDefinitionCreator {
     }
 
     if (refParameterValue != null) {
-      componentModel.setBeanReference(new RuntimeBeanReference(refParameterValue));
+      createBeanDefinitionRequest.getSpringComponentModel().setBeanReference(new RuntimeBeanReference(refParameterValue));
     }
     if (classParameterValue != null) {
       BeanDefinitionBuilder beanDefinitionBuilder;
@@ -71,7 +71,7 @@ class ObjectBeanDefinitionCreator extends BeanDefinitionCreator {
 
       beanDefinitionBuilder = rootBeanDefinition(addAnnotationsToClass(classParameter));
       processMuleProperties(componentModel, beanDefinitionBuilder, null);
-      componentModel.setBeanDefinition(beanDefinitionBuilder.getBeanDefinition());
+      createBeanDefinitionRequest.getSpringComponentModel().setBeanDefinition(beanDefinitionBuilder.getBeanDefinition());
     }
     return true;
   }

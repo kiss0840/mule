@@ -47,7 +47,7 @@ class EagerObjectCreator extends BeanDefinitionCreator {
   boolean handleRequest(Map<ComponentAst, SpringComponentModel2> springComponentModels,
                         CreateBeanDefinitionRequest createBeanDefinitionRequest) {
     SpringComponentModel componentModel = createBeanDefinitionRequest.getComponentModel();
-    Class<?> type = componentModel.getType();
+    Class<?> type = createBeanDefinitionRequest.getSpringComponentModel().getType();
     if (type == null) {
       return false;
     }
@@ -83,8 +83,8 @@ class EagerObjectCreator extends BeanDefinitionCreator {
           }
         });
       });
-      componentModel.setObjectInstance(instance);
-      componentModel.setBeanDefinition(rootBeanDefinition(ConstantFactoryBean.class)
+      createBeanDefinitionRequest.getSpringComponentModel().setObjectInstance(instance);
+      createBeanDefinitionRequest.getSpringComponentModel().setBeanDefinition(rootBeanDefinition(ConstantFactoryBean.class)
           .addConstructorArgValue(instance).getBeanDefinition());
       return true;
     }).orElse(false);

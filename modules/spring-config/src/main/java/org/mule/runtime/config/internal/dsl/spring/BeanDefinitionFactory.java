@@ -363,15 +363,17 @@ public class BeanDefinitionFactory {
     if (buildingDefinitionOptional.isPresent() || customBuildersComponentIdentifiers.contains(componentModel.getIdentifier())) {
       final CreateBeanDefinitionRequest request = new CreateBeanDefinitionRequest(parentComponentModel, componentModel,
                                                                                   buildingDefinitionOptional.orElse(null));
+      request.getSpringComponentModel().setType(componentModel.getType());
       this.componentModelProcessor.processRequest(springComponentModels, request);
 
-      final SpringComponentModel2 scm2 = new SpringComponentModel2();
-      scm2.setComponent(componentModel);
-      scm2.setType(componentModel.getType());
-      scm2.setObjectInstance(componentModel.getObjectInstance());
-      scm2.setBeanDefinition(componentModel.getBeanDefinition());
-      scm2.setBeanReference(componentModel.getBeanReference());
-      return Optional.of(scm2);
+      // final SpringComponentModel2 scm2 = new SpringComponentModel2();
+      // scm2.setComponent(componentModel);
+      // scm2.setType(componentModel.getType());
+      // scm2.setObjectInstance(componentModel.getObjectInstance());
+      // scm2.setBeanDefinition(componentModel.getBeanDefinition());
+      // scm2.setBeanReference(componentModel.getBeanReference());
+      // return Optional.of(scm2);
+      return Optional.of(request.getSpringComponentModel());
     } else {
       return processComponentWrapper(componentModel);
     }

@@ -50,12 +50,13 @@ class ReferenceBeanDefinitionCreator extends BeanDefinitionCreator {
           .build();
 
   private Consumer<CreateBeanDefinitionRequest> getConsumer() {
-    return (beanDefinitionRequest) -> {
+    return beanDefinitionRequest -> {
       SpringComponentModel componentModel = beanDefinitionRequest.getComponentModel();
-      componentModel.setBeanReference(new RuntimeBeanReference(componentModel.getRawParameters().get(REF_ATTRIBUTE)));
+      beanDefinitionRequest.getSpringComponentModel()
+          .setBeanReference(new RuntimeBeanReference(componentModel.getRawParameters().get(REF_ATTRIBUTE)));
       ObjectTypeVisitor objectTypeVisitor = new ObjectTypeVisitor(componentModel);
       beanDefinitionRequest.getComponentBuildingDefinition().getTypeDefinition().visit(objectTypeVisitor);
-      componentModel.setType(objectTypeVisitor.getType());
+      beanDefinitionRequest.getSpringComponentModel().setType(objectTypeVisitor.getType());
     };
   }
 

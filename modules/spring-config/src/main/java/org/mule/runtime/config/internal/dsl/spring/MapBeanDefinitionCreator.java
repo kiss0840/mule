@@ -48,11 +48,13 @@ class MapBeanDefinitionCreator extends BeanDefinitionCreator {
     componentBuildingDefinition.getTypeDefinition().visit(objectTypeVisitor);
     Class<?> type = objectTypeVisitor.getType();
     if (Map.class.isAssignableFrom(type) && componentBuildingDefinition.getObjectFactoryType() == null) {
-      ManagedList managedList = componentModel.getInnerComponents().stream()
-          .map(c -> ((SpringComponentModel) c).getBeanDefinition())
+      ManagedList managedList = componentModel.directChildrenStream()
+          .map(springComponentModels::get)
+          .map(SpringComponentModel2::getBeanDefinition)
           .collect(toCollection(ManagedList::new));
-      componentModel.setBeanDefinition(BeanDefinitionBuilder.genericBeanDefinition(MapFactoryBean.class)
-          .addConstructorArgValue(managedList).addConstructorArgValue(type).getBeanDefinition());
+      createBeanDefinitionRequest.getSpringComponentModel()
+          .setBeanDefinition(BeanDefinitionBuilder.genericBeanDefinition(MapFactoryBean.class)
+              .addConstructorArgValue(managedList).addConstructorArgValue(type).getBeanDefinition());
       return true;
     }
     return false;

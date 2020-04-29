@@ -41,16 +41,13 @@ class PropertiesMapBeanDefinitionCreator extends BeanDefinitionCreator {
         managedMap = createManagedMapFromEntries(componentModel);
       } else {
         managedMap = new ManagedMap<>();
-        ComponentModel parentComponentModel = createBeanDefinitionRequest.getParentComponentModel();
-        parentComponentModel.getInnerComponents()
-            .stream()
+        SpringComponentModel parentComponentModel = createBeanDefinitionRequest.getParentComponentModel();
+        parentComponentModel.directChildrenStream()
             .filter(childComponentModel -> childComponentModel.getIdentifier().equals(MULE_PROPERTY_IDENTIFIER))
-            .forEach(childComponentModel -> {
-              processAndAddMapProperty(childComponentModel, managedMap);
-            });
+            .forEach(childComponentModel -> processAndAddMapProperty((ComponentModel) childComponentModel, managedMap));
       }
       BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.rootBeanDefinition(HashMap.class);
-      componentModel.setBeanDefinition(beanDefinitionBuilder
+      createBeanDefinitionRequest.getSpringComponentModel().setBeanDefinition(beanDefinitionBuilder
           .addConstructorArgValue(managedMap)
           .getBeanDefinition());
       return true;

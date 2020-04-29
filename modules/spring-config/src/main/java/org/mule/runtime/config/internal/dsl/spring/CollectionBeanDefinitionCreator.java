@@ -10,7 +10,6 @@ import org.mule.runtime.ast.api.ComponentAst;
 import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
 import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
 import org.mule.runtime.config.internal.dsl.processor.ObjectTypeVisitor;
-import org.mule.runtime.config.internal.model.ComponentModel;
 import org.mule.runtime.dsl.api.component.ComponentBuildingDefinition;
 
 import java.util.Collection;
@@ -42,16 +41,25 @@ class CollectionBeanDefinitionCreator extends BeanDefinitionCreator {
     ObjectTypeVisitor objectTypeVisitor = new ObjectTypeVisitor(componentModel);
     componentBuildingDefinition.getTypeDefinition().visit(objectTypeVisitor);
     if (Collection.class.isAssignableFrom(objectTypeVisitor.getType())) {
-      componentModel.setType(objectTypeVisitor.getType());
+      createBeanDefinitionRequest.getSpringComponentModel().setType(objectTypeVisitor.getType());
       ManagedList<Object> managedList = new ManagedList<>();
-      for (ComponentModel innerComponent : componentModel.getInnerComponents()) {
-        SpringComponentModel innerSpringComp = (SpringComponentModel) innerComponent;
-        Object bean = innerSpringComp.getBeanDefinition() == null ? innerSpringComp.getBeanReference()
-            : innerSpringComp.getBeanDefinition();
-        managedList.add(bean);
-      }
-      componentModel.setBeanDefinition(BeanDefinitionBuilder.genericBeanDefinition(objectTypeVisitor.getType())
-          .addConstructorArgValue(managedList).getBeanDefinition());
+
+      componentModel.directChildrenStream()
+          .map(springComponentModels::get)
+          .map(innerSpringComp -> innerSpringComp.getBeanDefinition() == null
+              ? innerSpringComp.getBeanReference()
+              : innerSpringComp.getBeanDefinition())
+          .forEach(managedList::add);
+
+      // for (ComponentModel innerComponent : componentModel.getInnerComponents()) {
+      // SpringComponentModel innerSpringComp = (SpringComponentModel) innerComponent;
+      // Object bean = innerSpringComp.getBeanDefinition() == null ? innerSpringComp.getBeanReference()
+      // : innerSpringComp.getBeanDefinition();
+      // managedList.add(bean);
+      // }
+      createBeanDefinitionRequest.getSpringComponentModel()
+          .setBeanDefinition(BeanDefinitionBuilder.genericBeanDefinition(objectTypeVisitor.getType())
+              .addConstructorArgValue(managedList).getBeanDefinition());
       return true;
     }
     return false;

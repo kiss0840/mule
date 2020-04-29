@@ -41,7 +41,7 @@ class SimpleTypeBeanDefinitionCreator extends BeanDefinitionCreator {
     Class<?> type = objectTypeVisitor.getType();
     if (isSimpleType(type)) {
       SpringComponentModel componentModel = createBeanDefinitionRequest.getComponentModel();
-      componentModel.setType(type);
+      createBeanDefinitionRequest.getSpringComponentModel().setType(type);
       Map<String, String> parameters = componentModel.getRawParameters();
 
       if (parameters.size() >= 2) {
@@ -57,13 +57,14 @@ class SimpleTypeBeanDefinitionCreator extends BeanDefinitionCreator {
           : (parameters.values().isEmpty() ? null : parameters.values().iterator().next());
       if (value == null) {
         throw new MuleRuntimeException(createStaticMessage("Parameter at %s:%s must provide a non-empty value",
-                                                           componentModel.getConfigFileName()
+                                                           componentModel.getMetadata().getFileName()
                                                                .orElse("unknown"),
-                                                           componentModel.getLineNumber().orElse(-1)));
+                                                           componentModel.getMetadata().getStartLine().orElse(-1)));
       }
       Optional<TypeConverter> typeConverterOptional =
           createBeanDefinitionRequest.getComponentBuildingDefinition().getTypeConverter();
-      componentModel.setBeanDefinition(getConvertibleBeanDefinition(type, value, typeConverterOptional));
+      createBeanDefinitionRequest.getSpringComponentModel()
+          .setBeanDefinition(getConvertibleBeanDefinition(type, value, typeConverterOptional));
       return true;
     }
     return false;
