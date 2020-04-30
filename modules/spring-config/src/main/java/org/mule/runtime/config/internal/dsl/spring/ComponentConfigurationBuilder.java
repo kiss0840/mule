@@ -84,6 +84,9 @@ class ComponentConfigurationBuilder<T> {
     return componentModel.directChildrenStream()
         .map(springComponentModels::get)
         .map(springModel -> {
+          if (springModel == null) {
+            return null;
+          }
           // When it comes from old model it does not have the type set
           Class<?> beanDefinitionType = springModel.getType();
           if (beanDefinitionType == null) {
