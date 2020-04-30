@@ -16,7 +16,7 @@ import static org.springframework.beans.factory.xml.BeanDefinitionParserDelegate
 import static org.springframework.beans.factory.xml.BeanDefinitionParserDelegate.VALUE_REF_ATTRIBUTE;
 
 import org.mule.runtime.ast.api.ComponentAst;
-import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
+import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
 import org.mule.runtime.config.internal.model.ComponentModel;
 
 import java.util.HashMap;
@@ -30,7 +30,7 @@ import org.springframework.beans.factory.support.ManagedMap;
 class PropertiesMapBeanDefinitionCreator extends BeanDefinitionCreator {
 
   @Override
-  boolean handleRequest(Map<ComponentAst, SpringComponentModel2> springComponentModels,
+  boolean handleRequest(Map<ComponentAst, SpringComponentModel> springComponentModels,
                         CreateBeanDefinitionRequest createBeanDefinitionRequest) {
     ComponentAst componentModel = createBeanDefinitionRequest.getComponentModel();
     if (componentModel.getIdentifier().equals(MULE_PROPERTIES_IDENTIFIER)

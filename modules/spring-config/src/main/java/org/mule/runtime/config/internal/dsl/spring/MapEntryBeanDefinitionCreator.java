@@ -12,7 +12,7 @@ import static org.mule.runtime.dsl.api.component.DslSimpleType.isSimpleType;
 import static org.springframework.beans.factory.support.BeanDefinitionBuilder.genericBeanDefinition;
 
 import org.mule.runtime.ast.api.ComponentAst;
-import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
+import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
 import org.mule.runtime.config.internal.dsl.processor.ObjectTypeVisitor;
 import org.mule.runtime.dsl.api.component.ComponentBuildingDefinition;
 import org.mule.runtime.dsl.api.component.MapEntry;
@@ -56,7 +56,7 @@ class MapEntryBeanDefinitionCreator extends BeanDefinitionCreator {
   private static final String ENTRY_TYPE_VALUE_REF_PARAMETER_NAME = "value-ref";
 
   @Override
-  boolean handleRequest(Map<ComponentAst, SpringComponentModel2> springComponentModels,
+  boolean handleRequest(Map<ComponentAst, SpringComponentModel> springComponentModels,
                         CreateBeanDefinitionRequest createBeanDefinitionRequest) {
     ComponentAst componentModel = createBeanDefinitionRequest.getComponentModel();
     ObjectTypeVisitor objectTypeVisitor = new ObjectTypeVisitor(componentModel);
@@ -85,7 +85,7 @@ class MapEntryBeanDefinitionCreator extends BeanDefinitionCreator {
     return true;
   }
 
-  private Object getValue(Map<ComponentAst, SpringComponentModel2> springComponentModels,
+  private Object getValue(Map<ComponentAst, SpringComponentModel> springComponentModels,
                           ObjectTypeVisitor objectTypeVisitor, ComponentAst componentModel,
                           ComponentBuildingDefinition componentBuildingDefinition) {
     Object value;

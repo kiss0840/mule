@@ -9,7 +9,7 @@ package org.mule.runtime.config.internal.dsl.spring;
 import static org.springframework.beans.factory.support.BeanDefinitionBuilder.genericBeanDefinition;
 
 import org.mule.runtime.ast.api.ComponentAst;
-import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
+import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
 import org.mule.runtime.config.internal.factories.ConstantFactoryBean;
 import org.mule.runtime.dsl.api.component.TypeConverter;
 
@@ -40,7 +40,7 @@ abstract class BeanDefinitionCreator {
    *
    * @param request
    */
-  public final void processRequest(Map<ComponentAst, SpringComponentModel2> springComponentModels,
+  public final void processRequest(Map<ComponentAst, SpringComponentModel> springComponentModels,
                                    CreateBeanDefinitionRequest request) {
     if (handleRequest(springComponentModels, request)) {
       return;
@@ -57,7 +57,7 @@ abstract class BeanDefinitionCreator {
    * @param createBeanDefinitionRequest the creation request.
    * @return true if it created the {@code BeanDefinition}, false otherwise.
    */
-  abstract boolean handleRequest(Map<ComponentAst, SpringComponentModel2> springComponentModels,
+  abstract boolean handleRequest(Map<ComponentAst, SpringComponentModel> springComponentModels,
                                  CreateBeanDefinitionRequest createBeanDefinitionRequest);
 
   protected BeanDefinition getConvertibleBeanDefinition(Class<?> type, Object value, Optional<TypeConverter> converter) {

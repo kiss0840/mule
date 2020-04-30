@@ -7,7 +7,7 @@
 package org.mule.runtime.config.internal.dsl.spring;
 
 import org.mule.runtime.ast.api.ComponentAst;
-import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
+import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
 import org.mule.runtime.config.internal.dsl.processor.ObjectTypeVisitor;
 import org.mule.runtime.dsl.api.component.ComponentBuildingDefinition;
 
@@ -33,7 +33,7 @@ import org.springframework.beans.factory.support.ManagedList;
 class CollectionBeanDefinitionCreator extends BeanDefinitionCreator {
 
   @Override
-  boolean handleRequest(Map<ComponentAst, SpringComponentModel2> springComponentModels,
+  boolean handleRequest(Map<ComponentAst, SpringComponentModel> springComponentModels,
                         CreateBeanDefinitionRequest createBeanDefinitionRequest) {
     ComponentAst componentModel = createBeanDefinitionRequest.getComponentModel();
     ComponentBuildingDefinition componentBuildingDefinition = createBeanDefinitionRequest.getComponentBuildingDefinition();

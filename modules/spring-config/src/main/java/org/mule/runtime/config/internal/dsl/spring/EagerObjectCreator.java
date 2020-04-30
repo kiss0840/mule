@@ -15,7 +15,7 @@ import org.mule.runtime.api.exception.MuleRuntimeException;
 import org.mule.runtime.api.ioc.ObjectProvider;
 import org.mule.runtime.ast.api.ComponentAst;
 import org.mule.runtime.config.api.dsl.processor.AbstractAttributeDefinitionVisitor;
-import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
+import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
 import org.mule.runtime.config.internal.factories.ConstantFactoryBean;
 import org.mule.runtime.config.internal.model.ComponentModel;
 import org.mule.runtime.dsl.api.component.ComponentBuildingDefinition;
@@ -44,7 +44,7 @@ class EagerObjectCreator extends BeanDefinitionCreator {
           .build();
 
   @Override
-  boolean handleRequest(Map<ComponentAst, SpringComponentModel2> springComponentModels,
+  boolean handleRequest(Map<ComponentAst, SpringComponentModel> springComponentModels,
                         CreateBeanDefinitionRequest createBeanDefinitionRequest) {
     ComponentAst componentModel = createBeanDefinitionRequest.getComponentModel();
     Class<?> type = createBeanDefinitionRequest.getSpringComponentModel().getType();

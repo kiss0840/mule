@@ -9,7 +9,7 @@ package org.mule.runtime.config.internal.dsl.spring;
 import static java.util.stream.Collectors.toCollection;
 
 import org.mule.runtime.ast.api.ComponentAst;
-import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
+import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
 import org.mule.runtime.config.internal.dsl.processor.ObjectTypeVisitor;
 import org.mule.runtime.dsl.api.component.ComponentBuildingDefinition;
 
@@ -39,7 +39,7 @@ import org.springframework.beans.factory.support.ManagedList;
 class MapBeanDefinitionCreator extends BeanDefinitionCreator {
 
   @Override
-  boolean handleRequest(Map<ComponentAst, SpringComponentModel2> springComponentModels,
+  boolean handleRequest(Map<ComponentAst, SpringComponentModel> springComponentModels,
                         CreateBeanDefinitionRequest createBeanDefinitionRequest) {
     ComponentAst componentModel = createBeanDefinitionRequest.getComponentModel();
     ObjectTypeVisitor objectTypeVisitor = new ObjectTypeVisitor(componentModel);
@@ -49,7 +49,7 @@ class MapBeanDefinitionCreator extends BeanDefinitionCreator {
     if (Map.class.isAssignableFrom(type) && componentBuildingDefinition.getObjectFactoryType() == null) {
       ManagedList managedList = componentModel.directChildrenStream()
           .map(springComponentModels::get)
-          .map(SpringComponentModel2::getBeanDefinition)
+          .map(SpringComponentModel::getBeanDefinition)
           .collect(toCollection(ManagedList::new));
       createBeanDefinitionRequest.getSpringComponentModel()
           .setBeanDefinition(BeanDefinitionBuilder.genericBeanDefinition(MapFactoryBean.class)

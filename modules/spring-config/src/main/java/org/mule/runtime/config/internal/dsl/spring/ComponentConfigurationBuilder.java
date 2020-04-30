@@ -11,7 +11,7 @@ import static java.util.stream.Collectors.toList;
 import static org.mule.runtime.config.internal.dsl.spring.CommonBeanDefinitionCreator.areMatchingTypes;
 
 import org.mule.runtime.ast.api.ComponentAst;
-import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
+import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
 import org.mule.runtime.config.internal.model.ComponentModel;
 import org.mule.runtime.dsl.api.component.AttributeDefinition;
 import org.mule.runtime.dsl.api.component.AttributeDefinitionVisitor;
@@ -53,7 +53,7 @@ class ComponentConfigurationBuilder<T> {
   private final ComponentModel componentModel;
   private final ComponentBuildingDefinition<T> componentBuildingDefinition;
 
-  public ComponentConfigurationBuilder(Map<ComponentAst, SpringComponentModel2> springComponentModels,
+  public ComponentConfigurationBuilder(Map<ComponentAst, SpringComponentModel> springComponentModels,
                                        ComponentAst componentModel, ComponentBuildingDefinition<T> componentBuildingDefinition,
                                        BeanDefinitionBuilderHelper beanDefinitionBuilderHelper) {
     this.componentModel = (ComponentModel) componentModel;
@@ -75,7 +75,7 @@ class ComponentConfigurationBuilder<T> {
     }
   }
 
-  private List<ComponentValue> collectComplexParametersWithTypes(Map<ComponentAst, SpringComponentModel2> springComponentModels,
+  private List<ComponentValue> collectComplexParametersWithTypes(Map<ComponentAst, SpringComponentModel> springComponentModels,
                                                                  ComponentAst componentModel) {
     /*
      * TODO: MULE-9638 This ugly code is required since we need to get the object type from the bean definition. This code will go

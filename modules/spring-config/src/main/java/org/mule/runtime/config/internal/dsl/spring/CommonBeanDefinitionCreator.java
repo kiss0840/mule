@@ -31,7 +31,7 @@ import org.mule.runtime.api.util.LazyValue;
 import org.mule.runtime.api.util.Pair;
 import org.mule.runtime.ast.api.ComponentAst;
 import org.mule.runtime.ast.api.ComponentMetadataAst;
-import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
+import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
 import org.mule.runtime.config.internal.dsl.processor.ObjectTypeVisitor;
 import org.mule.runtime.config.internal.model.ComponentModel;
 import org.mule.runtime.config.privileged.dsl.BeanDefinitionPostProcessor;
@@ -99,7 +99,7 @@ public class CommonBeanDefinitionCreator extends BeanDefinitionCreator {
   }
 
   @Override
-  public boolean handleRequest(Map<ComponentAst, SpringComponentModel2> springComponentModels,
+  public boolean handleRequest(Map<ComponentAst, SpringComponentModel> springComponentModels,
                                CreateBeanDefinitionRequest request) {
     ComponentAst componentModel = request.getComponentModel();
     ComponentBuildingDefinition buildingDefinition = request.getComponentBuildingDefinition();
@@ -111,7 +111,7 @@ public class CommonBeanDefinitionCreator extends BeanDefinitionCreator {
     return true;
   }
 
-  private BeanDefinitionBuilder createBeanDefinitionBuilder(SpringComponentModel2 componentModel,
+  private BeanDefinitionBuilder createBeanDefinitionBuilder(SpringComponentModel componentModel,
                                                             ComponentBuildingDefinition buildingDefinition) {
     BeanDefinitionBuilder beanDefinitionBuilder;
     if (buildingDefinition.getObjectFactoryType() != null) {
@@ -138,7 +138,7 @@ public class CommonBeanDefinitionCreator extends BeanDefinitionCreator {
                                                                                                 .getTextContent())));
   }
 
-  private void processAnnotations(SpringComponentModel2 componentModel, BeanDefinitionBuilder beanDefinitionBuilder) {
+  private void processAnnotations(SpringComponentModel componentModel, BeanDefinitionBuilder beanDefinitionBuilder) {
     if (Component.class.isAssignableFrom(componentModel.getType())
         // ValueResolver end up generating pojos from the extension whose class is enhanced to have annotations
         || ValueResolver.class.isAssignableFrom(componentModel.getType())) {
@@ -190,7 +190,7 @@ public class CommonBeanDefinitionCreator extends BeanDefinitionCreator {
     return objectTypeVisitor.getType();
   }
 
-  private BeanDefinitionBuilder createBeanDefinitionBuilderFromObjectFactory(final SpringComponentModel2 componentModel,
+  private BeanDefinitionBuilder createBeanDefinitionBuilderFromObjectFactory(final SpringComponentModel componentModel,
                                                                              final ComponentBuildingDefinition componentBuildingDefinition) {
     ObjectTypeVisitor objectTypeVisitor = new ObjectTypeVisitor(componentModel.getComponent());
     componentBuildingDefinition.getTypeDefinition().visit(objectTypeVisitor);
@@ -232,7 +232,7 @@ public class CommonBeanDefinitionCreator extends BeanDefinitionCreator {
         .collect(toMap(propValue -> propValue.getFirst(), propValue -> propValue.getSecond()));
   }
 
-  private void processComponentDefinitionModel(Map<ComponentAst, SpringComponentModel2> springComponentModels,
+  private void processComponentDefinitionModel(Map<ComponentAst, SpringComponentModel> springComponentModels,
                                                final CreateBeanDefinitionRequest request,
                                                ComponentBuildingDefinition componentBuildingDefinition,
                                                final BeanDefinitionBuilder beanDefinitionBuilder) {
@@ -281,7 +281,7 @@ public class CommonBeanDefinitionCreator extends BeanDefinitionCreator {
     return propertyValues;
   }
 
-  private void processObjectConstructionParameters(Map<ComponentAst, SpringComponentModel2> springComponentModels,
+  private void processObjectConstructionParameters(Map<ComponentAst, SpringComponentModel> springComponentModels,
                                                    final ComponentAst componentModel,
                                                    final ComponentBuildingDefinition componentBuildingDefinition,
                                                    final BeanDefinitionBuilderHelper beanDefinitionBuilderHelper) {

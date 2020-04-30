@@ -6,9 +6,13 @@
  */
 package org.mule.runtime.config.internal.dsl.spring;
 
+import org.mule.runtime.api.util.LazyValue;
 import org.mule.runtime.ast.api.ComponentAst;
-import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
+import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
+import org.mule.runtime.config.internal.dsl.processor.ObjectTypeVisitor;
 import org.mule.runtime.dsl.api.component.ComponentBuildingDefinition;
+
+import java.util.function.Supplier;
 
 /**
  * Bean definition creation request. Provides all the required content to build a
@@ -21,7 +25,8 @@ public class CreateBeanDefinitionRequest {
   private final ComponentAst parentComponentModel;
   private final ComponentAst componentModel;
   private final ComponentBuildingDefinition componentBuildingDefinition;
-  private final SpringComponentModel2 springComponentModel;
+  private final SpringComponentModel springComponentModel;
+  private final Supplier<Class<?>> typeRetriever;
 
   /**
    * @param parentComponentModel the container element of the holder for the configuration attributes defined by the user
@@ -34,8 +39,14 @@ public class CreateBeanDefinitionRequest {
     this.parentComponentModel = parentComponentModel;
     this.componentModel = componentModel;
     this.componentBuildingDefinition = componentBuildingDefinition;
-    this.springComponentModel = new SpringComponentModel2();
+    this.springComponentModel = new SpringComponentModel();
     springComponentModel.setComponent(componentModel);
+
+    this.typeRetriever = new LazyValue<>(() -> {
+      ObjectTypeVisitor objectTypeVisitor = new ObjectTypeVisitor(componentModel);
+      componentBuildingDefinition.getTypeDefinition().visit(objectTypeVisitor);
+      return objectTypeVisitor.getType();
+    });
   }
 
   public ComponentAst getParentComponentModel() {
@@ -50,7 +61,11 @@ public class CreateBeanDefinitionRequest {
     return componentBuildingDefinition;
   }
 
-  public SpringComponentModel2 getSpringComponentModel() {
+  public SpringComponentModel getSpringComponentModel() {
     return springComponentModel;
+  }
+
+  public Class<?> retrieveType() {
+    return typeRetriever.get();
   }
 }

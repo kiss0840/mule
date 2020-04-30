@@ -49,7 +49,7 @@ import org.mule.runtime.ast.api.ComponentMetadataAst;
 import org.mule.runtime.config.api.dsl.model.ComponentBuildingDefinitionRegistry;
 import org.mule.runtime.config.api.dsl.model.properties.ConfigurationPropertiesProviderFactory;
 import org.mule.runtime.config.internal.SpringConfigurationComponentLocator;
-import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
+import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
 import org.mule.runtime.config.internal.model.ComponentModel;
 import org.mule.runtime.core.api.exception.ErrorTypeMatcher;
 import org.mule.runtime.core.api.exception.SingleErrorTypeMatcher;
@@ -162,7 +162,7 @@ public class BeanDefinitionFactory {
    * @param componentLocator            where the locations of any {@link Component}'s locations must be registered
    * @return the {@code BeanDefinition} of the component model.
    */
-  public void resolveComponentRecursively(Map<ComponentAst, SpringComponentModel2> springComponentModels,
+  public void resolveComponentRecursively(Map<ComponentAst, SpringComponentModel> springComponentModels,
                                           ComponentAst parentComponentModel,
                                           ComponentAst componentModel,
                                           BeanDefinitionRegistry registry,
@@ -173,7 +173,7 @@ public class BeanDefinitionFactory {
     resolveComponent(springComponentModels, parentComponentModel, componentModel, registry, componentLocator);
   }
 
-  private void resolveComponent(Map<ComponentAst, SpringComponentModel2> springComponentModels,
+  private void resolveComponent(Map<ComponentAst, SpringComponentModel> springComponentModels,
                                 ComponentAst parentComponentModel,
                                 ComponentAst componentModel,
                                 BeanDefinitionRegistry registry,
@@ -184,8 +184,8 @@ public class BeanDefinitionFactory {
     }
 
     resolveComponentBeanDefinition(springComponentModels, parentComponentModel, componentModel)
-        .ifPresent(scm2 -> {
-          springComponentModels.put(componentModel, scm2);
+        .ifPresent(springComponentModel -> {
+          springComponentModels.put(componentModel, springComponentModel);
 
           // TODO MULE-9638: Once we migrate all core definitions we need to define a mechanism for customizing
           // how core constructs are processed.
@@ -194,15 +194,16 @@ public class BeanDefinitionFactory {
 
           componentBuildingDefinitionRegistry.getBuildingDefinition(componentModel.getIdentifier())
               .ifPresent(componentBuildingDefinition -> {
-                if ((scm2.getType() != null) && Component.class.isAssignableFrom(scm2.getType())) {
-                  addAnnotation(ANNOTATION_NAME, componentModel.getIdentifier(), scm2);
+                if ((springComponentModel.getType() != null)
+                    && Component.class.isAssignableFrom(springComponentModel.getType())) {
+                  addAnnotation(ANNOTATION_NAME, componentModel.getIdentifier(), springComponentModel);
                   // We need to use a mutable map since spring will resolve the properties placeholder present in the value if
                   // needed
                   // and it will be done by mutating the same map.
                   addAnnotation(ANNOTATION_PARAMETERS,
                                 new HashMap<>(((ComponentModel) componentModel)
                                     .getRawParameters()),
-                                scm2);
+                                springComponentModel);
                   // add any error mappings if present
                   List<ComponentAst> errorMappingComponents = componentModel.directChildrenStream()
                       .filter(innerComponent -> ERROR_MAPPING_IDENTIFIER
@@ -226,21 +227,21 @@ public class BeanDefinitionFactory {
                                     ErrorType targetValue = resolveErrorType(innerComponent
                                         .getRawParameterValue(TARGET_TYPE).orElse(null));
                                     return new ErrorMapping(errorTypeMatcher, targetValue);
-                                  }).collect(toList()), scm2);
+                                  }).collect(toList()), springComponentModel);
                   }
 
                   componentLocator.addComponentLocation(componentModel.getLocation());
-                  addAnnotation(ANNOTATION_COMPONENT_CONFIG, componentModel, scm2);
+                  addAnnotation(ANNOTATION_COMPONENT_CONFIG, componentModel, springComponentModel);
                 }
               });
 
-          addAnnotation(LOCATION_KEY, componentModel.getLocation(), scm2);
+          addAnnotation(LOCATION_KEY, componentModel.getLocation(), springComponentModel);
           addAnnotation(REPRESENTATION_ANNOTATION_KEY, resolveProcessorRepresentation(artifactId,
                                                                                       componentModel
                                                                                           .getLocation(),
                                                                                       componentModel
                                                                                           .getMetadata()),
-                        scm2);
+                        springComponentModel);
         });
   }
 
@@ -305,7 +306,7 @@ public class BeanDefinitionFactory {
     return stringBuilder.toString();
   }
 
-  private void processMuleConfiguration(Map<ComponentAst, SpringComponentModel2> springComponentModels,
+  private void processMuleConfiguration(Map<ComponentAst, SpringComponentModel> springComponentModels,
                                         ComponentAst componentModel, BeanDefinitionRegistry registry) {
     if (componentModel.getIdentifier().equals(CONFIGURATION_IDENTIFIER)) {
       AtomicReference<BeanDefinition> expressionLanguage = new AtomicReference<>();
@@ -330,7 +331,7 @@ public class BeanDefinitionFactory {
     }
   }
 
-  private void processMuleSecurityManager(Map<ComponentAst, SpringComponentModel2> springComponentModels,
+  private void processMuleSecurityManager(Map<ComponentAst, SpringComponentModel> springComponentModels,
                                           ComponentAst componentModel, BeanDefinitionRegistry registry) {
     if (componentModel.getIdentifier().equals(SECURITY_MANAGER_IDENTIFIER)) {
       componentModel.directChildrenStream().forEach(childComponentModel -> {
@@ -345,9 +346,9 @@ public class BeanDefinitionFactory {
   }
 
 
-  private Optional<SpringComponentModel2> resolveComponentBeanDefinition(Map<ComponentAst, SpringComponentModel2> springComponentModels,
-                                                                         ComponentAst parentComponentModel,
-                                                                         ComponentAst componentModel) {
+  private Optional<SpringComponentModel> resolveComponentBeanDefinition(Map<ComponentAst, SpringComponentModel> springComponentModels,
+                                                                        ComponentAst parentComponentModel,
+                                                                        ComponentAst componentModel) {
     Optional<ComponentBuildingDefinition<?>> buildingDefinitionOptional =
         componentBuildingDefinitionRegistry.getBuildingDefinition(componentModel.getIdentifier());
     if (buildingDefinitionOptional.isPresent() || customBuildersComponentIdentifiers.contains(componentModel.getIdentifier())) {
@@ -361,8 +362,8 @@ public class BeanDefinitionFactory {
     }
   }
 
-  private Optional<SpringComponentModel2> processComponentWrapper(Map<ComponentAst, SpringComponentModel2> springComponentModels,
-                                                                  ComponentAst componentModel) {
+  private Optional<SpringComponentModel> processComponentWrapper(Map<ComponentAst, SpringComponentModel> springComponentModels,
+                                                                 ComponentAst componentModel) {
     return componentBuildingDefinitionRegistry.getWrappedComponent(componentModel.getIdentifier())
         .map(wrapperElementType -> {
           if (wrapperElementType.equals(SINGLE)) {
@@ -372,10 +373,10 @@ public class BeanDefinitionFactory {
               throw new IllegalStateException(format("Element [%s] located at [%s] does not have any child element declared, but one is required.",
                                                      componentModel.getIdentifier(), location));
             }
-            final SpringComponentModel2 firstSpringComponentModel =
+            final SpringComponentModel firstSpringComponentModel =
                 springComponentModels.get(componentModel.directChildrenStream().findFirst().get());
 
-            final SpringComponentModel2 springComponentModel = new SpringComponentModel2();
+            final SpringComponentModel springComponentModel = new SpringComponentModel();
             springComponentModel.setComponent(componentModel);
             springComponentModel.setType(firstSpringComponentModel.getType());
             springComponentModel.setObjectInstance(firstSpringComponentModel.getObjectInstance());

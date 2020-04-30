@@ -61,7 +61,7 @@ import org.mule.runtime.ast.api.ArtifactAst;
 import org.mule.runtime.ast.api.ComponentAst;
 import org.mule.runtime.ast.graph.api.ArtifactAstDependencyGraph;
 import org.mule.runtime.config.internal.dsl.model.NoSuchComponentModelException;
-import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
+import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
 import org.mule.runtime.config.internal.dsl.processor.ObjectTypeVisitor;
 import org.mule.runtime.config.internal.model.ComponentModel;
 import org.mule.runtime.core.api.MuleContext;
@@ -485,7 +485,7 @@ public class LazyMuleArtifactContext extends MuleArtifactContext
   protected List<Pair<String, ComponentAst>> doCreateApplicationComponents(DefaultListableBeanFactory beanFactory,
                                                                            ArtifactAst minimalAppModel,
                                                                            boolean mustBeRoot,
-                                                                           Map<ComponentAst, SpringComponentModel2> springComponentModels) {
+                                                                           Map<ComponentAst, SpringComponentModel> springComponentModels) {
     final List<Pair<String, ComponentAst>> applicationComponents =
         super.doCreateApplicationComponents(beanFactory, minimalAppModel, mustBeRoot, springComponentModels);
 
@@ -501,7 +501,7 @@ public class LazyMuleArtifactContext extends MuleArtifactContext
           LOGGER.debug("Registering orphan named component '{}'...", nameAttribute);
 
           applicationComponents.add(0, new Pair<>(nameAttribute, cm));
-          final SpringComponentModel2 springCompModel = springComponentModels.get(cm);
+          final SpringComponentModel springCompModel = springComponentModels.get(cm);
           final BeanDefinition beanDef = springCompModel.getBeanDefinition();
           if (beanDef != null) {
             beanFactory.registerBeanDefinition(cm.getComponentId().get(), beanDef);
@@ -512,7 +512,7 @@ public class LazyMuleArtifactContext extends MuleArtifactContext
     // Handle orphan components without name, rely on the location.
     orphanComponents.stream()
         .forEach(cm -> {
-          final SpringComponentModel2 springCompModel = springComponentModels.get(cm);
+          final SpringComponentModel springCompModel = springComponentModels.get(cm);
           final BeanDefinition beanDef = springCompModel.getBeanDefinition();
           if (beanDef != null) {
             final String beanName = cm.getComponentId().orElse(uniqueValue(beanDef.getBeanClassName()));

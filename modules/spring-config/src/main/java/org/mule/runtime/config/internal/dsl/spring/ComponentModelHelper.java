@@ -23,7 +23,7 @@ import org.mule.runtime.api.component.ComponentIdentifier;
 import org.mule.runtime.api.component.TypedComponentIdentifier;
 import org.mule.runtime.ast.api.ComponentAst;
 import org.mule.runtime.config.internal.dsl.model.ExtensionModelHelper;
-import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
+import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
 import org.mule.runtime.config.internal.model.ComponentModel;
 import org.mule.runtime.module.extension.internal.runtime.resolver.ValueResolver;
 
@@ -56,7 +56,7 @@ public class ComponentModelHelper {
             : componentModel.getIdentifier());
   }
 
-  public static boolean isAnnotatedObject(SpringComponentModel2 springComponentModel) {
+  public static boolean isAnnotatedObject(SpringComponentModel springComponentModel) {
     return isOfType(springComponentModel, Component.class)
         // ValueResolver end up generating pojos from the extension whose class is enhanced to have annotations
         || isOfType(springComponentModel, ValueResolver.class);
@@ -90,7 +90,7 @@ public class ComponentModelHelper {
     return componentModel.getComponentType().equals(ON_ERROR);
   }
 
-  private static boolean isOfType(SpringComponentModel2 springComponentModel, Class type) {
+  private static boolean isOfType(SpringComponentModel springComponentModel, Class type) {
     Class<?> componentModelType = springComponentModel.getType();
     if (componentModelType == null) {
       return false;
@@ -98,7 +98,7 @@ public class ComponentModelHelper {
     return CommonBeanDefinitionCreator.areMatchingTypes(type, componentModelType);
   }
 
-  public static void addAnnotation(QName annotationKey, Object annotationValue, SpringComponentModel2 springComponentModel) {
+  public static void addAnnotation(QName annotationKey, Object annotationValue, SpringComponentModel springComponentModel) {
     // TODO MULE-10970 - remove condition once everything is AnnotatedObject.
     if (!ComponentModelHelper.isAnnotatedObject(springComponentModel)
         && !springComponentModel.getComponent().getIdentifier().getName().equals("flow-ref")) {

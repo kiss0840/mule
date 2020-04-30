@@ -16,7 +16,7 @@ import static org.mule.runtime.core.privileged.component.AnnotatedObjectInvocati
 import static org.springframework.beans.factory.support.BeanDefinitionBuilder.rootBeanDefinition;
 
 import org.mule.runtime.ast.api.ComponentAst;
-import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
+import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
 import org.mule.runtime.config.internal.dsl.model.config.RuntimeConfigurationException;
 
 import java.util.Map;
@@ -37,7 +37,7 @@ class ObjectBeanDefinitionCreator extends BeanDefinitionCreator {
   private static final String CLASS_PARAMETER = "class";
 
   @Override
-  boolean handleRequest(Map<ComponentAst, SpringComponentModel2> springComponentModels,
+  boolean handleRequest(Map<ComponentAst, SpringComponentModel> springComponentModels,
                         CreateBeanDefinitionRequest createBeanDefinitionRequest) {
     ComponentAst componentModel = createBeanDefinitionRequest.getComponentModel();
     if (!componentModel.getIdentifier().equals(buildFromStringRepresentation("mule:object"))) {

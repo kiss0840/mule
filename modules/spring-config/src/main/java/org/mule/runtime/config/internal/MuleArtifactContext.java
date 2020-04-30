@@ -66,7 +66,7 @@ import org.mule.runtime.config.api.dsl.model.ComponentBuildingDefinitionRegistry
 import org.mule.runtime.config.api.dsl.model.ResourceProvider;
 import org.mule.runtime.config.api.dsl.processor.ArtifactConfig;
 import org.mule.runtime.config.internal.dsl.model.ClassLoaderResourceProvider;
-import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
+import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
 import org.mule.runtime.config.internal.dsl.model.config.DefaultConfigurationPropertiesResolver;
 import org.mule.runtime.config.internal.dsl.model.config.EnvironmentPropertiesConfigurationProvider;
 import org.mule.runtime.config.internal.dsl.spring.BeanDefinitionFactory;
@@ -538,14 +538,14 @@ public class MuleArtifactContext extends AbstractRefreshableConfigApplicationCon
   protected List<Pair<String, ComponentAst>> createApplicationComponents(DefaultListableBeanFactory beanFactory,
                                                                          ArtifactAst applicationModel,
                                                                          boolean mustBeRoot) {
-    Map<ComponentAst, SpringComponentModel2> springComponentModels = new LinkedHashMap<>();
+    Map<ComponentAst, SpringComponentModel> springComponentModels = new LinkedHashMap<>();
 
     return doCreateApplicationComponents(beanFactory, applicationModel, mustBeRoot, springComponentModels);
   }
 
   protected List<Pair<String, ComponentAst>> doCreateApplicationComponents(DefaultListableBeanFactory beanFactory,
                                                                            ArtifactAst applicationModel, boolean mustBeRoot,
-                                                                           Map<ComponentAst, SpringComponentModel2> springComponentModels) {
+                                                                           Map<ComponentAst, SpringComponentModel> springComponentModels) {
     // This should only be done once at the initial application model creation, called from Spring
     List<Pair<ComponentModel, Optional<String>>> objectProvidersByName =
         lookObjectProvidersComponentModels(applicationModel);
@@ -725,7 +725,7 @@ public class MuleArtifactContext extends AbstractRefreshableConfigApplicationCon
    * Forces the registration of instances of {@link TransformerResolver} and {@link Converter} to be created, so that
    * {@link PostRegistrationActionsPostProcessor} can work its magic and add them to the transformation graph
    */
-  protected static void postProcessBeanDefinition(SpringComponentModel2 resolvedComponent, BeanDefinitionRegistry registry,
+  protected static void postProcessBeanDefinition(SpringComponentModel resolvedComponent, BeanDefinitionRegistry registry,
                                                   String beanName) {
     if (Converter.class.isAssignableFrom(resolvedComponent.getType())) {
       GenericBeanDefinition converterBeanDefinitionCopy = new GenericBeanDefinition(resolvedComponent.getBeanDefinition());
@@ -733,14 +733,6 @@ public class MuleArtifactContext extends AbstractRefreshableConfigApplicationCon
       registry.registerBeanDefinition(beanName + "-" + "converter", converterBeanDefinitionCopy);
     }
   }
-  // protected static void postProcessBeanDefinition(SpringComponentModel resolvedComponent, BeanDefinitionRegistry registry,
-  // String beanName) {
-  // if (Converter.class.isAssignableFrom(resolvedComponent.getType())) {
-  // GenericBeanDefinition converterBeanDefinitionCopy = new GenericBeanDefinition(resolvedComponent.getBeanDefinition());
-  // converterBeanDefinitionCopy.setScope(SPRING_SINGLETON_OBJECT);
-  // registry.registerBeanDefinition(beanName + "-" + "converter", converterBeanDefinitionCopy);
-  // }
-  // }
 
   public MuleContextWithRegistry getMuleContext() {
     return muleContext;
