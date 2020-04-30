@@ -7,6 +7,7 @@
 package org.mule.runtime.config.internal.dsl.spring;
 
 import static java.lang.String.format;
+import static java.util.Optional.of;
 import static java.util.stream.Collectors.toList;
 import static org.mule.runtime.api.component.AbstractComponent.LOCATION_KEY;
 import static org.mule.runtime.api.component.Component.Annotations.NAME_ANNOTATION_KEY;
@@ -42,14 +43,12 @@ import org.mule.runtime.api.component.ComponentIdentifier;
 import org.mule.runtime.api.component.location.ComponentLocation;
 import org.mule.runtime.api.exception.ErrorTypeRepository;
 import org.mule.runtime.api.exception.MuleRuntimeException;
-import org.mule.runtime.api.functional.Either;
 import org.mule.runtime.api.message.ErrorType;
 import org.mule.runtime.ast.api.ComponentAst;
 import org.mule.runtime.ast.api.ComponentMetadataAst;
 import org.mule.runtime.config.api.dsl.model.ComponentBuildingDefinitionRegistry;
 import org.mule.runtime.config.api.dsl.model.properties.ConfigurationPropertiesProviderFactory;
 import org.mule.runtime.config.internal.SpringConfigurationComponentLocator;
-import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
 import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
 import org.mule.runtime.config.internal.model.ComponentModel;
 import org.mule.runtime.core.api.exception.ErrorTypeMatcher;
@@ -66,13 +65,9 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.config.BeanReference;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.w3c.dom.Element;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -171,89 +166,82 @@ public class BeanDefinitionFactory {
                                           ComponentAst parentComponentModel,
                                           ComponentAst componentModel,
                                           BeanDefinitionRegistry registry,
-                                          BiConsumer<SpringComponentModel2, BeanDefinitionRegistry> componentModelPostProcessor,
-                                          BiFunction<Element, BeanDefinition, Either<BeanDefinition, BeanReference>> oldParsingMechanism,
                                           SpringConfigurationComponentLocator componentLocator) {
     componentModel.directChildrenStream()
-        .forEach(innerComponent -> resolveComponentRecursively(springComponentModels, componentModel,
-                                                               innerComponent, registry,
-                                                               componentModelPostProcessor, oldParsingMechanism,
+        .forEach(innerComponent -> resolveComponentRecursively(springComponentModels, componentModel, innerComponent, registry,
                                                                componentLocator));
-    resolveComponent(springComponentModels, parentComponentModel, componentModel, registry, componentModelPostProcessor,
-                     componentLocator);
+    resolveComponent(springComponentModels, parentComponentModel, componentModel, registry, componentLocator);
   }
 
   private void resolveComponent(Map<ComponentAst, SpringComponentModel2> springComponentModels,
                                 ComponentAst parentComponentModel,
                                 ComponentAst componentModel,
                                 BeanDefinitionRegistry registry,
-                                BiConsumer<SpringComponentModel2, BeanDefinitionRegistry> componentDefinitionModelProcessor,
                                 SpringConfigurationComponentLocator componentLocator) {
-    if (isComponentIgnored(componentModel.getIdentifier())) {
+    if (isComponentIgnored(componentModel.getIdentifier())
+        || springComponentModels.containsKey(componentModel)) {
       return;
     }
 
-    resolveComponentBeanDefinition(springComponentModels, (SpringComponentModel) parentComponentModel,
-                                   (SpringComponentModel) componentModel)
-                                       .ifPresent(scm2 -> {
-                                         springComponentModels.put(componentModel, scm2);
-                                         componentDefinitionModelProcessor.accept(scm2, registry);
+    resolveComponentBeanDefinition(springComponentModels, parentComponentModel, componentModel)
+        .ifPresent(scm2 -> {
+          springComponentModels.put(componentModel, scm2);
 
-                                         // TODO MULE-9638: Once we migrate all core definitions we need to define a mechanism for customizing
-                                         // how core constructs are processed.
-                                         processMuleConfiguration(springComponentModels, componentModel, registry);
-                                         processMuleSecurityManager(springComponentModels, componentModel, registry);
+          // TODO MULE-9638: Once we migrate all core definitions we need to define a mechanism for customizing
+          // how core constructs are processed.
+          processMuleConfiguration(springComponentModels, componentModel, registry);
+          processMuleSecurityManager(springComponentModels, componentModel, registry);
 
-                                         componentBuildingDefinitionRegistry.getBuildingDefinition(componentModel.getIdentifier())
-                                             .ifPresent(componentBuildingDefinition -> {
-                                               if ((scm2.getType() != null) && Component.class.isAssignableFrom(scm2.getType())) {
-                                                 addAnnotation(ANNOTATION_NAME, componentModel.getIdentifier(), scm2);
-                                                 // We need to use a mutable map since spring will resolve the properties placeholder present in the value if
-                                                 // needed
-                                                 // and it will be done by mutating the same map.
-                                                 addAnnotation(ANNOTATION_PARAMETERS,
-                                                               new HashMap<>(((ComponentModel) componentModel)
-                                                                   .getRawParameters()),
-                                                               scm2);
-                                                 // add any error mappings if present
-                                                 List<ComponentAst> errorMappingComponents = componentModel.directChildrenStream()
-                                                     .filter(innerComponent -> ERROR_MAPPING_IDENTIFIER
-                                                         .equals(innerComponent.getIdentifier()))
-                                                     .collect(toList());
-                                                 if (!errorMappingComponents.isEmpty()) {
-                                                   addAnnotation(ANNOTATION_ERROR_MAPPINGS,
-                                                                 errorMappingComponents.stream().map(innerComponent -> {
-                                                                   ComponentIdentifier source =
-                                                                       innerComponent.getRawParameterValue(SOURCE_TYPE)
-                                                                           .map(ComponentIdentifier::buildFromStringRepresentation)
-                                                                           .orElse(ANY);
+          componentBuildingDefinitionRegistry.getBuildingDefinition(componentModel.getIdentifier())
+              .ifPresent(componentBuildingDefinition -> {
+                if ((scm2.getType() != null) && Component.class.isAssignableFrom(scm2.getType())) {
+                  addAnnotation(ANNOTATION_NAME, componentModel.getIdentifier(), scm2);
+                  // We need to use a mutable map since spring will resolve the properties placeholder present in the value if
+                  // needed
+                  // and it will be done by mutating the same map.
+                  addAnnotation(ANNOTATION_PARAMETERS,
+                                new HashMap<>(((ComponentModel) componentModel)
+                                    .getRawParameters()),
+                                scm2);
+                  // add any error mappings if present
+                  List<ComponentAst> errorMappingComponents = componentModel.directChildrenStream()
+                      .filter(innerComponent -> ERROR_MAPPING_IDENTIFIER
+                          .equals(innerComponent.getIdentifier()))
+                      .collect(toList());
+                  if (!errorMappingComponents.isEmpty()) {
+                    addAnnotation(ANNOTATION_ERROR_MAPPINGS,
+                                  errorMappingComponents.stream().map(innerComponent -> {
+                                    ComponentIdentifier source =
+                                        innerComponent.getRawParameterValue(SOURCE_TYPE)
+                                            .map(ComponentIdentifier::buildFromStringRepresentation)
+                                            .orElse(ANY);
 
-                                                                   ErrorType errorType = errorTypeRepository
-                                                                       .lookupErrorType(source)
-                                                                       .orElseThrow(() -> new MuleRuntimeException(createStaticMessage("Could not find error '%s'.",
-                                                                                                                                       source)));
+                                    ErrorType errorType = errorTypeRepository
+                                        .lookupErrorType(source)
+                                        .orElseThrow(() -> new MuleRuntimeException(createStaticMessage("Could not find error '%s'.",
+                                                                                                        source)));
 
-                                                                   ErrorTypeMatcher errorTypeMatcher =
-                                                                       new SingleErrorTypeMatcher(errorType);
-                                                                   ErrorType targetValue = resolveErrorType(innerComponent
-                                                                       .getRawParameterValue(TARGET_TYPE).orElse(null));
-                                                                   return new ErrorMapping(errorTypeMatcher, targetValue);
-                                                                 }).collect(toList()), scm2);
-                                                 }
+                                    ErrorTypeMatcher errorTypeMatcher =
+                                        new SingleErrorTypeMatcher(errorType);
+                                    ErrorType targetValue = resolveErrorType(innerComponent
+                                        .getRawParameterValue(TARGET_TYPE).orElse(null));
+                                    return new ErrorMapping(errorTypeMatcher, targetValue);
+                                  }).collect(toList()), scm2);
+                  }
 
-                                                 componentLocator.addComponentLocation(componentModel.getLocation());
-                                                 addAnnotation(ANNOTATION_COMPONENT_CONFIG, componentModel, scm2);
-                                               }
-                                             });
+                  componentLocator.addComponentLocation(componentModel.getLocation());
+                  addAnnotation(ANNOTATION_COMPONENT_CONFIG, componentModel, scm2);
+                }
+              });
 
-                                         addAnnotation(LOCATION_KEY, componentModel.getLocation(), scm2);
-                                         addAnnotation(REPRESENTATION_ANNOTATION_KEY, resolveProcessorRepresentation(artifactId,
-                                                                                                                     componentModel
-                                                                                                                         .getLocation(),
-                                                                                                                     componentModel
-                                                                                                                         .getMetadata()),
-                                                       scm2);
-                                       });
+          addAnnotation(LOCATION_KEY, componentModel.getLocation(), scm2);
+          addAnnotation(REPRESENTATION_ANNOTATION_KEY, resolveProcessorRepresentation(artifactId,
+                                                                                      componentModel
+                                                                                          .getLocation(),
+                                                                                      componentModel
+                                                                                          .getMetadata()),
+                        scm2);
+        });
   }
 
   private ErrorType resolveErrorType(String representation) {
@@ -322,11 +310,13 @@ public class BeanDefinitionFactory {
     if (componentModel.getIdentifier().equals(CONFIGURATION_IDENTIFIER)) {
       AtomicReference<BeanDefinition> expressionLanguage = new AtomicReference<>();
 
-      componentModel.directChildrenStream().forEach(childComponentModel -> {
-        if (areMatchingTypes(MVELExpressionLanguage.class, springComponentModels.get(childComponentModel).getType())) {
-          expressionLanguage.set(((SpringComponentModel) childComponentModel).getBeanDefinition());
-        }
-      });
+      componentModel.directChildrenStream()
+          .map(springComponentModels::get)
+          .forEach(childSpringComponentModel -> {
+            if (areMatchingTypes(MVELExpressionLanguage.class, childSpringComponentModel.getType())) {
+              expressionLanguage.set(childSpringComponentModel.getBeanDefinition());
+            }
+          });
       componentModel.getRawParameterValue("defaultObjectSerializer-ref")
           .ifPresent(defaultObjectSerializer -> {
             if (defaultObjectSerializer != DEFAULT_OBJECT_SERIALIZER_NAME) {
@@ -356,52 +346,42 @@ public class BeanDefinitionFactory {
 
 
   private Optional<SpringComponentModel2> resolveComponentBeanDefinition(Map<ComponentAst, SpringComponentModel2> springComponentModels,
-                                                                         SpringComponentModel parentComponentModel,
-                                                                         SpringComponentModel componentModel) {
+                                                                         ComponentAst parentComponentModel,
+                                                                         ComponentAst componentModel) {
     Optional<ComponentBuildingDefinition<?>> buildingDefinitionOptional =
         componentBuildingDefinitionRegistry.getBuildingDefinition(componentModel.getIdentifier());
     if (buildingDefinitionOptional.isPresent() || customBuildersComponentIdentifiers.contains(componentModel.getIdentifier())) {
       final CreateBeanDefinitionRequest request = new CreateBeanDefinitionRequest(parentComponentModel, componentModel,
                                                                                   buildingDefinitionOptional.orElse(null));
-      request.getSpringComponentModel().setType(componentModel.getType());
+      request.getSpringComponentModel().setType(((ComponentModel) componentModel).getType());
       this.componentModelProcessor.processRequest(springComponentModels, request);
-
-      final SpringComponentModel2 scm2 = new SpringComponentModel2();
-      scm2.setComponent(componentModel);
-      scm2.setType(componentModel.getType());
-      scm2.setObjectInstance(componentModel.getObjectInstance());
-      scm2.setBeanDefinition(componentModel.getBeanDefinition());
-      scm2.setBeanReference(componentModel.getBeanReference());
-      return Optional.of(scm2);
-
-      // return Optional.of(request.getSpringComponentModel());
+      return of(request.getSpringComponentModel());
     } else {
-      return processComponentWrapper(componentModel);
+      return processComponentWrapper(springComponentModels, componentModel);
     }
   }
 
-  private Optional<SpringComponentModel2> processComponentWrapper(SpringComponentModel componentModel) {
+  private Optional<SpringComponentModel2> processComponentWrapper(Map<ComponentAst, SpringComponentModel2> springComponentModels,
+                                                                  ComponentAst componentModel) {
     return componentBuildingDefinitionRegistry.getWrappedComponent(componentModel.getIdentifier())
         .map(wrapperElementType -> {
           if (wrapperElementType.equals(SINGLE)) {
-            if (componentModel.getInnerComponents().isEmpty()) {
+            if (componentModel.directChildrenStream().count() == 0) {
               String location =
                   componentModel.getLocation() != null ? componentModel.getLocation().getLocation() : "";
               throw new IllegalStateException(format("Element [%s] located at [%s] does not have any child element declared, but one is required.",
                                                      componentModel.getIdentifier(), location));
             }
-            final SpringComponentModel firstComponentModel = (SpringComponentModel) componentModel.getInnerComponents().get(0);
-            componentModel.setType(firstComponentModel.getType());
-            componentModel.setBeanDefinition(firstComponentModel.getBeanDefinition());
-            componentModel.setBeanReference(firstComponentModel.getBeanReference());
+            final SpringComponentModel2 firstSpringComponentModel =
+                springComponentModels.get(componentModel.directChildrenStream().findFirst().get());
 
-            final SpringComponentModel2 scm2 = new SpringComponentModel2();
-            scm2.setComponent(componentModel);
-            scm2.setType(componentModel.getType());
-            scm2.setObjectInstance(componentModel.getObjectInstance());
-            scm2.setBeanDefinition(componentModel.getBeanDefinition());
-            scm2.setBeanReference(componentModel.getBeanReference());
-            return scm2;
+            final SpringComponentModel2 springComponentModel = new SpringComponentModel2();
+            springComponentModel.setComponent(componentModel);
+            springComponentModel.setType(firstSpringComponentModel.getType());
+            springComponentModel.setObjectInstance(firstSpringComponentModel.getObjectInstance());
+            springComponentModel.setBeanDefinition(firstSpringComponentModel.getBeanDefinition());
+            springComponentModel.setBeanReference(firstSpringComponentModel.getBeanReference());
+            return springComponentModel;
           } else {
             throw new IllegalStateException(format("Element %s does not have a building definition and it should since it's of type %s",
                                                    componentModel.getIdentifier(), wrapperElementType));

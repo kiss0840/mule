@@ -9,7 +9,6 @@ package org.mule.runtime.config.internal.dsl.spring;
 import static java.util.stream.Collectors.toCollection;
 
 import org.mule.runtime.ast.api.ComponentAst;
-import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
 import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
 import org.mule.runtime.config.internal.dsl.processor.ObjectTypeVisitor;
 import org.mule.runtime.dsl.api.component.ComponentBuildingDefinition;
@@ -42,7 +41,7 @@ class MapBeanDefinitionCreator extends BeanDefinitionCreator {
   @Override
   boolean handleRequest(Map<ComponentAst, SpringComponentModel2> springComponentModels,
                         CreateBeanDefinitionRequest createBeanDefinitionRequest) {
-    SpringComponentModel componentModel = createBeanDefinitionRequest.getComponentModel();
+    ComponentAst componentModel = createBeanDefinitionRequest.getComponentModel();
     ObjectTypeVisitor objectTypeVisitor = new ObjectTypeVisitor(componentModel);
     ComponentBuildingDefinition componentBuildingDefinition = createBeanDefinitionRequest.getComponentBuildingDefinition();
     componentBuildingDefinition.getTypeDefinition().visit(objectTypeVisitor);

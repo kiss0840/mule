@@ -54,13 +54,13 @@ class ComponentConfigurationBuilder<T> {
   private final ComponentBuildingDefinition<T> componentBuildingDefinition;
 
   public ComponentConfigurationBuilder(Map<ComponentAst, SpringComponentModel2> springComponentModels,
-                                       ComponentModel componentModel, ComponentBuildingDefinition<T> componentBuildingDefinition,
+                                       ComponentAst componentModel, ComponentBuildingDefinition<T> componentBuildingDefinition,
                                        BeanDefinitionBuilderHelper beanDefinitionBuilderHelper) {
-    this.componentModel = componentModel;
+    this.componentModel = (ComponentModel) componentModel;
     this.componentBuildingDefinition = componentBuildingDefinition;
     this.beanDefinitionBuilderHelper = beanDefinitionBuilderHelper;
-    this.simpleParameters = new HashMap<>(componentModel.getRawParameters());
-    this.complexParameters = collectComplexParametersWithTypes(springComponentModels, (ComponentAst) componentModel);
+    this.simpleParameters = new HashMap<>(((ComponentModel) componentModel).getRawParameters());
+    this.complexParameters = collectComplexParametersWithTypes(springComponentModels, componentModel);
   }
 
   public void processConfiguration() {

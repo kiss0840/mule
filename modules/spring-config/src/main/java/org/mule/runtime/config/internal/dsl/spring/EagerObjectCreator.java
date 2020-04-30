@@ -15,9 +15,9 @@ import org.mule.runtime.api.exception.MuleRuntimeException;
 import org.mule.runtime.api.ioc.ObjectProvider;
 import org.mule.runtime.ast.api.ComponentAst;
 import org.mule.runtime.config.api.dsl.processor.AbstractAttributeDefinitionVisitor;
-import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
 import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
 import org.mule.runtime.config.internal.factories.ConstantFactoryBean;
+import org.mule.runtime.config.internal.model.ComponentModel;
 import org.mule.runtime.dsl.api.component.ComponentBuildingDefinition;
 import org.mule.runtime.dsl.api.component.SetterAttributeDefinition;
 
@@ -46,7 +46,7 @@ class EagerObjectCreator extends BeanDefinitionCreator {
   @Override
   boolean handleRequest(Map<ComponentAst, SpringComponentModel2> springComponentModels,
                         CreateBeanDefinitionRequest createBeanDefinitionRequest) {
-    SpringComponentModel componentModel = createBeanDefinitionRequest.getComponentModel();
+    ComponentAst componentModel = createBeanDefinitionRequest.getComponentModel();
     Class<?> type = createBeanDefinitionRequest.getSpringComponentModel().getType();
     if (type == null) {
       return false;
@@ -67,7 +67,7 @@ class EagerObjectCreator extends BeanDefinitionCreator {
 
           @Override
           public void onUndefinedSimpleParameters() {
-            Map<String, String> parameters = componentModel.getRawParameters();
+            Map<String, String> parameters = ((ComponentModel) componentModel).getRawParameters();
             String attributeName = setterAttributeDefinition.getAttributeName();
             try {
               setProperty(instance, attributeName, parameters);

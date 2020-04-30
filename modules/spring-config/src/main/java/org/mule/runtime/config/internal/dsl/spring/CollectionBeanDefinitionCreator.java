@@ -7,7 +7,6 @@
 package org.mule.runtime.config.internal.dsl.spring;
 
 import org.mule.runtime.ast.api.ComponentAst;
-import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
 import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
 import org.mule.runtime.config.internal.dsl.processor.ObjectTypeVisitor;
 import org.mule.runtime.dsl.api.component.ComponentBuildingDefinition;
@@ -36,7 +35,7 @@ class CollectionBeanDefinitionCreator extends BeanDefinitionCreator {
   @Override
   boolean handleRequest(Map<ComponentAst, SpringComponentModel2> springComponentModels,
                         CreateBeanDefinitionRequest createBeanDefinitionRequest) {
-    SpringComponentModel componentModel = createBeanDefinitionRequest.getComponentModel();
+    ComponentAst componentModel = createBeanDefinitionRequest.getComponentModel();
     ComponentBuildingDefinition componentBuildingDefinition = createBeanDefinitionRequest.getComponentBuildingDefinition();
     ObjectTypeVisitor objectTypeVisitor = new ObjectTypeVisitor(componentModel);
     componentBuildingDefinition.getTypeDefinition().visit(objectTypeVisitor);
@@ -51,12 +50,6 @@ class CollectionBeanDefinitionCreator extends BeanDefinitionCreator {
               : innerSpringComp.getBeanDefinition())
           .forEach(managedList::add);
 
-      // for (ComponentModel innerComponent : componentModel.getInnerComponents()) {
-      // SpringComponentModel innerSpringComp = (SpringComponentModel) innerComponent;
-      // Object bean = innerSpringComp.getBeanDefinition() == null ? innerSpringComp.getBeanReference()
-      // : innerSpringComp.getBeanDefinition();
-      // managedList.add(bean);
-      // }
       createBeanDefinitionRequest.getSpringComponentModel()
           .setBeanDefinition(BeanDefinitionBuilder.genericBeanDefinition(objectTypeVisitor.getType())
               .addConstructorArgValue(managedList).getBeanDefinition());

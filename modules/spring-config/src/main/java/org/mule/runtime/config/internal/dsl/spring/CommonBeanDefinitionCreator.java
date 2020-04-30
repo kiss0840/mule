@@ -31,7 +31,6 @@ import org.mule.runtime.api.util.LazyValue;
 import org.mule.runtime.api.util.Pair;
 import org.mule.runtime.ast.api.ComponentAst;
 import org.mule.runtime.ast.api.ComponentMetadataAst;
-import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
 import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
 import org.mule.runtime.config.internal.dsl.processor.ObjectTypeVisitor;
 import org.mule.runtime.config.internal.model.ComponentModel;
@@ -102,7 +101,7 @@ public class CommonBeanDefinitionCreator extends BeanDefinitionCreator {
   @Override
   public boolean handleRequest(Map<ComponentAst, SpringComponentModel2> springComponentModels,
                                CreateBeanDefinitionRequest request) {
-    SpringComponentModel componentModel = request.getComponentModel();
+    ComponentAst componentModel = request.getComponentModel();
     ComponentBuildingDefinition buildingDefinition = request.getComponentBuildingDefinition();
     request.getSpringComponentModel().setType(retrieveComponentType(componentModel, buildingDefinition));
     BeanDefinitionBuilder beanDefinitionBuilder =
@@ -184,7 +183,7 @@ public class CommonBeanDefinitionCreator extends BeanDefinitionCreator {
         .collect(toMap(e -> QName.valueOf(e.getKey()), e -> e.getValue())));
   }
 
-  private Class<?> retrieveComponentType(final ComponentModel componentModel,
+  private Class<?> retrieveComponentType(final ComponentAst componentModel,
                                          ComponentBuildingDefinition componentBuildingDefinition) {
     ObjectTypeVisitor objectTypeVisitor = new ObjectTypeVisitor(componentModel);
     componentBuildingDefinition.getTypeDefinition().visit(objectTypeVisitor);
@@ -193,7 +192,7 @@ public class CommonBeanDefinitionCreator extends BeanDefinitionCreator {
 
   private BeanDefinitionBuilder createBeanDefinitionBuilderFromObjectFactory(final SpringComponentModel2 componentModel,
                                                                              final ComponentBuildingDefinition componentBuildingDefinition) {
-    ObjectTypeVisitor objectTypeVisitor = new ObjectTypeVisitor((ComponentModel) componentModel.getComponent());
+    ObjectTypeVisitor objectTypeVisitor = new ObjectTypeVisitor(componentModel.getComponent());
     componentBuildingDefinition.getTypeDefinition().visit(objectTypeVisitor);
     Class<?> objectFactoryType = componentBuildingDefinition.getObjectFactoryType();
 
@@ -237,7 +236,7 @@ public class CommonBeanDefinitionCreator extends BeanDefinitionCreator {
                                                final CreateBeanDefinitionRequest request,
                                                ComponentBuildingDefinition componentBuildingDefinition,
                                                final BeanDefinitionBuilder beanDefinitionBuilder) {
-    final SpringComponentModel componentModel = request.getComponentModel();
+    final ComponentAst componentModel = request.getComponentModel();
 
     processObjectConstructionParameters(springComponentModels, componentModel, componentBuildingDefinition,
                                         new BeanDefinitionBuilderHelper(beanDefinitionBuilder));
@@ -250,9 +249,7 @@ public class CommonBeanDefinitionCreator extends BeanDefinitionCreator {
     if (originalBeanDefinition != wrappedBeanDefinition) {
       request.getSpringComponentModel().setType(wrappedBeanDefinition.getBeanClass());
     }
-    final SpringPostProcessorIocHelper iocHelper =
-        new SpringPostProcessorIocHelper(objectFactoryClassRepository, wrappedBeanDefinition);
-    request.getSpringComponentModel().setBeanDefinition(iocHelper.getBeanDefinition());
+    request.getSpringComponentModel().setBeanDefinition(wrappedBeanDefinition);
   }
 
   static void processMuleProperties(ComponentAst componentModel, BeanDefinitionBuilder beanDefinitionBuilder,
@@ -285,7 +282,7 @@ public class CommonBeanDefinitionCreator extends BeanDefinitionCreator {
   }
 
   private void processObjectConstructionParameters(Map<ComponentAst, SpringComponentModel2> springComponentModels,
-                                                   final ComponentModel componentModel,
+                                                   final ComponentAst componentModel,
                                                    final ComponentBuildingDefinition componentBuildingDefinition,
                                                    final BeanDefinitionBuilderHelper beanDefinitionBuilderHelper) {
     new ComponentConfigurationBuilder(springComponentModels, componentModel, componentBuildingDefinition,
@@ -317,9 +314,7 @@ public class CommonBeanDefinitionCreator extends BeanDefinitionCreator {
           .getBeanDefinition();
       return (AbstractBeanDefinition) newBeanDefinition;
     } else {
-      final SpringPostProcessorIocHelper iocHelper =
-          new SpringPostProcessorIocHelper(objectFactoryClassRepository, originalBeanDefinition);
-      return iocHelper.getBeanDefinition();
+      return originalBeanDefinition;
     }
   }
 

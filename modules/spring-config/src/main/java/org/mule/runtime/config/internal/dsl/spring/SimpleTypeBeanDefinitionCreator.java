@@ -11,9 +11,9 @@ import static org.mule.runtime.dsl.api.component.DslSimpleType.isSimpleType;
 
 import org.mule.runtime.api.exception.MuleRuntimeException;
 import org.mule.runtime.ast.api.ComponentAst;
-import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
 import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
 import org.mule.runtime.config.internal.dsl.processor.ObjectTypeVisitor;
+import org.mule.runtime.config.internal.model.ComponentModel;
 import org.mule.runtime.dsl.api.component.TypeConverter;
 
 import java.util.Map;
@@ -40,7 +40,7 @@ class SimpleTypeBeanDefinitionCreator extends BeanDefinitionCreator {
     createBeanDefinitionRequest.getComponentBuildingDefinition().getTypeDefinition().visit(objectTypeVisitor);
     Class<?> type = objectTypeVisitor.getType();
     if (isSimpleType(type)) {
-      SpringComponentModel componentModel = createBeanDefinitionRequest.getComponentModel();
+      ComponentModel componentModel = (ComponentModel) createBeanDefinitionRequest.getComponentModel();
       createBeanDefinitionRequest.getSpringComponentModel().setType(type);
       Map<String, String> parameters = componentModel.getRawParameters();
 

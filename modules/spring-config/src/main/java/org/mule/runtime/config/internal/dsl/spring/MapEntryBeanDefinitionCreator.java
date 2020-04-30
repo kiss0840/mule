@@ -12,7 +12,6 @@ import static org.mule.runtime.dsl.api.component.DslSimpleType.isSimpleType;
 import static org.springframework.beans.factory.support.BeanDefinitionBuilder.genericBeanDefinition;
 
 import org.mule.runtime.ast.api.ComponentAst;
-import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
 import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
 import org.mule.runtime.config.internal.dsl.processor.ObjectTypeVisitor;
 import org.mule.runtime.dsl.api.component.ComponentBuildingDefinition;
@@ -59,7 +58,7 @@ class MapEntryBeanDefinitionCreator extends BeanDefinitionCreator {
   @Override
   boolean handleRequest(Map<ComponentAst, SpringComponentModel2> springComponentModels,
                         CreateBeanDefinitionRequest createBeanDefinitionRequest) {
-    SpringComponentModel componentModel = createBeanDefinitionRequest.getComponentModel();
+    ComponentAst componentModel = createBeanDefinitionRequest.getComponentModel();
     ObjectTypeVisitor objectTypeVisitor = new ObjectTypeVisitor(componentModel);
     createBeanDefinitionRequest.getComponentBuildingDefinition().getTypeDefinition().visit(objectTypeVisitor);
     Class<?> type = objectTypeVisitor.getType();
@@ -68,18 +67,16 @@ class MapEntryBeanDefinitionCreator extends BeanDefinitionCreator {
     }
     ComponentBuildingDefinition componentBuildingDefinition = createBeanDefinitionRequest.getComponentBuildingDefinition();
     createBeanDefinitionRequest.getSpringComponentModel().setType(type);
-    final Object key = componentModel.getRawParameters().get(ENTRY_TYPE_KEY_PARAMETER_NAME);
+    final Object key = componentModel.getRawParameterValue(ENTRY_TYPE_KEY_PARAMETER_NAME).orElse(null);
     Object keyBeanDefinition = getConvertibleBeanDefinition(objectTypeVisitor.getMapEntryType().get().getKeyType(), key,
                                                             componentBuildingDefinition.getKeyTypeConverter());
 
 
-    Object value = null;
-    // MULE-11984: Check that generated map entries are not empty
-    if (componentModel.getRawParameters().get(ENTRY_TYPE_VALUE_REF_PARAMETER_NAME) != null) {
-      value = new RuntimeBeanReference(componentModel.getRawParameters().get(ENTRY_TYPE_VALUE_REF_PARAMETER_NAME));
-    } else {
-      value = getValue(springComponentModels, objectTypeVisitor, componentModel, componentBuildingDefinition);
-    }
+    Object value =
+        // MULE-11984: Check that generated map entries are not empty
+        componentModel.getRawParameterValue(ENTRY_TYPE_VALUE_REF_PARAMETER_NAME)
+            .map(paramName -> (Object) new RuntimeBeanReference(paramName))
+            .orElseGet(() -> getValue(springComponentModels, objectTypeVisitor, componentModel, componentBuildingDefinition));
 
     AbstractBeanDefinition beanDefinition = genericBeanDefinition(MapEntry.class).addConstructorArgValue(keyBeanDefinition)
         .addConstructorArgValue(value).getBeanDefinition();
@@ -89,17 +86,17 @@ class MapEntryBeanDefinitionCreator extends BeanDefinitionCreator {
   }
 
   private Object getValue(Map<ComponentAst, SpringComponentModel2> springComponentModels,
-                          ObjectTypeVisitor objectTypeVisitor, SpringComponentModel componentModel,
+                          ObjectTypeVisitor objectTypeVisitor, ComponentAst componentModel,
                           ComponentBuildingDefinition componentBuildingDefinition) {
     Object value;
     Class valueType = objectTypeVisitor.getMapEntryType().get().getValueType();
     if (isSimpleType(valueType) || componentModel.directChildrenStream().count() == 0) {
       value = getConvertibleBeanDefinition(objectTypeVisitor.getMapEntryType().get().getValueType(),
-                                           componentModel.getRawParameters().get(SIMPLE_TYPE_VALUE_PARAMETER_NAME),
+                                           componentModel.getRawParameterValue(SIMPLE_TYPE_VALUE_PARAMETER_NAME).orElse(null),
                                            componentBuildingDefinition.getTypeConverter());
     } else if (List.class.isAssignableFrom(objectTypeVisitor.getMapEntryType().get().getValueType())) {
       if (componentModel.directChildrenStream().count() == 0) {
-        String valueParameter = componentModel.getRawParameters().get(SIMPLE_TYPE_VALUE_PARAMETER_NAME);
+        String valueParameter = componentModel.getRawParameterValue(SIMPLE_TYPE_VALUE_PARAMETER_NAME).orElse(null);
         value = getConvertibleBeanDefinition(valueType, valueParameter, componentBuildingDefinition.getTypeConverter());
       } else {
         ManagedList<Object> managedList = componentModel.directChildrenStream()

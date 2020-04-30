@@ -585,37 +585,8 @@ public class MuleArtifactContext extends AbstractRefreshableConfigApplicationCon
               }
             });
 
-        beanDefinitionFactory
-            .resolveComponentRecursively(springComponentModels, null, componentModel, beanFactory,
-                                         (resolvedComponentModel, registry) -> {
-                                           //                                           if (((ComponentModel) resolvedComponentModel.getComponent()).isRoot()) {
-                                           //                                             String nameAttribute =
-                                           //                                                 resolvedComponentModel.getComponent().getComponentId().orElse(null);
-                                           //                                             if (resolvedComponentModel.getComponent().getIdentifier()
-                                           //                                                 .equals(CONFIGURATION_IDENTIFIER)) {
-                                           //                                               nameAttribute = OBJECT_MULE_CONFIGURATION;
-                                           //                                             } else if (nameAttribute == null) {
-                                           //                                               // This may be a configuration that does not requires a name.
-                                           //                                               nameAttribute = uniqueValue(resolvedComponentModel.getBeanDefinition()
-                                           //                                                   .getBeanClassName());
-                                           //
-                                           //                                               if (alwaysEnabledUnnamedTopLevelComponents
-                                           //                                                   .contains(resolvedComponentModel.getComponent().getIdentifier())) {
-                                           //                                                 alwaysEnabledGeneratedTopLevelComponentsName.add(nameAttribute);
-                                           //                                                 createdComponentModels
-                                           //                                                     .add(new Pair<>(nameAttribute, resolvedComponentModel.getComponent()));
-                                           //                                               } else if (resolvedComponentModel.getType() != null
-                                           //                                                   && TransactionManagerFactory.class
-                                           //                                                       .isAssignableFrom(resolvedComponentModel.getType())) {
-                                           //                                                 createdComponentModels
-                                           //                                                     .add(new Pair<>(nameAttribute, resolvedComponentModel.getComponent()));
-                                           //                                               }
-                                           //                                             }
-                                           //                                             registry.registerBeanDefinition(nameAttribute,
-                                           //                                                                             resolvedComponentModel.getBeanDefinition());
-                                           //                                             postProcessBeanDefinition(componentModel, registry, nameAttribute);
-                                           // }
-                                         }, null, componentLocator);
+        beanDefinitionFactory.resolveComponentRecursively(springComponentModels, null, componentModel, beanFactory,
+                                                          componentLocator);
 
         componentLocator.addComponentLocation(cm.getLocation());
       }
@@ -648,9 +619,9 @@ public class MuleArtifactContext extends AbstractRefreshableConfigApplicationCon
       }
     });
 
-    this.objectProviders
-        .addAll(objectProvidersByName.stream().map(pair -> (ConfigurableObjectProvider) pair.getFirst().getObjectInstance())
-            .collect(toList()));
+    objectProvidersByName.stream()
+        .map(pair -> (ConfigurableObjectProvider) springComponentModels.get(pair.getFirst()).getObjectInstance())
+        .forEach(this.objectProviders::add);
     registerObjectFromObjectProviders(beanFactory);
 
     Set<String> objectProviderNames = objectProvidersByName.stream().map(Pair::getSecond).filter(Optional::isPresent)

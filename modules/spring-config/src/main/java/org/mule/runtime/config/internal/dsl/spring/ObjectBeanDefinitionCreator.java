@@ -16,7 +16,6 @@ import static org.mule.runtime.core.privileged.component.AnnotatedObjectInvocati
 import static org.springframework.beans.factory.support.BeanDefinitionBuilder.rootBeanDefinition;
 
 import org.mule.runtime.ast.api.ComponentAst;
-import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
 import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
 import org.mule.runtime.config.internal.dsl.model.config.RuntimeConfigurationException;
 
@@ -40,21 +39,21 @@ class ObjectBeanDefinitionCreator extends BeanDefinitionCreator {
   @Override
   boolean handleRequest(Map<ComponentAst, SpringComponentModel2> springComponentModels,
                         CreateBeanDefinitionRequest createBeanDefinitionRequest) {
-    SpringComponentModel componentModel = createBeanDefinitionRequest.getComponentModel();
+    ComponentAst componentModel = createBeanDefinitionRequest.getComponentModel();
     if (!componentModel.getIdentifier().equals(buildFromStringRepresentation("mule:object"))) {
       return false;
     }
-    String refParameterValue = componentModel.getRawParameters().get(REF_PARAMETER);
-    String classParameterValue = componentModel.getRawParameters().get(CLASS_PARAMETER);
+    String refParameterValue = componentModel.getRawParameterValue(REF_PARAMETER).orElse(null);
+    String classParameterValue = componentModel.getRawParameterValue(CLASS_PARAMETER).orElse(null);
     if (refParameterValue != null && classParameterValue != null) {
       throw new RuntimeConfigurationException(createStaticMessage(format("Object cannot contain both '%s' and '%s' parameters. Offending resource is '%s'",
                                                                          REF_PARAMETER, CLASS_PARAMETER,
-                                                                         componentModel.getComponentLocation())));
+                                                                         componentModel.getLocation())));
     }
     if (refParameterValue == null && classParameterValue == null) {
       throw new RuntimeConfigurationException(createStaticMessage(format("Object must contain '%s' or '%s' parameter. Offending resource is '%s'",
                                                                          REF_PARAMETER, CLASS_PARAMETER,
-                                                                         componentModel.getComponentLocation())));
+                                                                         componentModel.getLocation())));
     }
 
     if (refParameterValue != null) {

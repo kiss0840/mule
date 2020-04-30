@@ -6,8 +6,6 @@
  */
 package org.mule.runtime.config.internal.dsl.spring;
 
-import static java.util.Optional.empty;
-import static java.util.Optional.ofNullable;
 import static org.mule.runtime.api.component.Component.ANNOTATIONS_PROPERTY_NAME;
 import static org.mule.runtime.api.component.TypedComponentIdentifier.ComponentType.ERROR_HANDLER;
 import static org.mule.runtime.api.component.TypedComponentIdentifier.ComponentType.ON_ERROR;
@@ -25,14 +23,12 @@ import org.mule.runtime.api.component.ComponentIdentifier;
 import org.mule.runtime.api.component.TypedComponentIdentifier;
 import org.mule.runtime.ast.api.ComponentAst;
 import org.mule.runtime.config.internal.dsl.model.ExtensionModelHelper;
-import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
 import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
 import org.mule.runtime.config.internal.model.ComponentModel;
 import org.mule.runtime.module.extension.internal.runtime.resolver.ValueResolver;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 import javax.xml.namespace.QName;
 
@@ -128,21 +124,6 @@ public class ComponentModelHelper {
       annotations = (Map<QName, Object>) propertyValue.getValue();
     }
     annotations.put(annotationKey, annotationValue);
-  }
-
-  public static <T> Optional<T> getAnnotation(QName annotationKey, SpringComponentModel componentModel) {
-    if (componentModel.getBeanDefinition() == null) {
-      return empty();
-    }
-    PropertyValue propertyValue =
-        componentModel.getBeanDefinition().getPropertyValues().getPropertyValue(ANNOTATIONS_PROPERTY_NAME);
-    Map<QName, Object> annotations;
-    if (propertyValue == null) {
-      return empty();
-    } else {
-      annotations = (Map<QName, Object>) propertyValue.getValue();
-      return ofNullable((T) annotations.get(annotationKey));
-    }
   }
 
   public static boolean isRouter(ComponentAst componentModel) {

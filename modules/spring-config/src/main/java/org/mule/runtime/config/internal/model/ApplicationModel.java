@@ -592,7 +592,7 @@ public class ApplicationModel implements ArtifactAst {
         Optional<ComponentBuildingDefinition<?>> buildingDefinition =
             buildingDefinitionRegistry.getBuildingDefinition(componentModel.getIdentifier());
         buildingDefinition.map(definition -> {
-          ObjectTypeVisitor typeDefinitionVisitor = new ObjectTypeVisitor((ComponentModel) componentModel);
+          ObjectTypeVisitor typeDefinitionVisitor = new ObjectTypeVisitor(componentModel);
           definition.getTypeDefinition().visit(typeDefinitionVisitor);
           // We still have components without extension models
           final Class<?> type = typeDefinitionVisitor.getType();

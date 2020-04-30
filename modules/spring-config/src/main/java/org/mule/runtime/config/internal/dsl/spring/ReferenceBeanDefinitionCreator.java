@@ -10,10 +10,8 @@ import static org.mule.runtime.config.internal.model.ApplicationModel.TRANSFORME
 
 import org.mule.runtime.api.component.ComponentIdentifier;
 import org.mule.runtime.ast.api.ComponentAst;
-import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
 import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
 import org.mule.runtime.config.internal.dsl.processor.ObjectTypeVisitor;
-import org.mule.runtime.config.internal.model.ComponentModel;
 
 import java.util.Map;
 import java.util.function.Consumer;
@@ -51,9 +49,9 @@ class ReferenceBeanDefinitionCreator extends BeanDefinitionCreator {
 
   private Consumer<CreateBeanDefinitionRequest> getConsumer() {
     return beanDefinitionRequest -> {
-      SpringComponentModel componentModel = beanDefinitionRequest.getComponentModel();
+      ComponentAst componentModel = beanDefinitionRequest.getComponentModel();
       beanDefinitionRequest.getSpringComponentModel()
-          .setBeanReference(new RuntimeBeanReference(componentModel.getRawParameters().get(REF_ATTRIBUTE)));
+          .setBeanReference(new RuntimeBeanReference(componentModel.getRawParameterValue(REF_ATTRIBUTE).orElse(null)));
       ObjectTypeVisitor objectTypeVisitor = new ObjectTypeVisitor(componentModel);
       beanDefinitionRequest.getComponentBuildingDefinition().getTypeDefinition().visit(objectTypeVisitor);
       beanDefinitionRequest.getSpringComponentModel().setType(objectTypeVisitor.getType());
@@ -63,7 +61,7 @@ class ReferenceBeanDefinitionCreator extends BeanDefinitionCreator {
   @Override
   boolean handleRequest(Map<ComponentAst, SpringComponentModel2> springComponentModels,
                         CreateBeanDefinitionRequest createBeanDefinitionRequest) {
-    ComponentModel componentModel = createBeanDefinitionRequest.getComponentModel();
+    ComponentAst componentModel = createBeanDefinitionRequest.getComponentModel();
     if (referenceConsumers.containsKey(componentModel.getIdentifier())) {
       referenceConsumers.get(componentModel.getIdentifier()).accept(createBeanDefinitionRequest);
       return true;

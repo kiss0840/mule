@@ -417,7 +417,7 @@ public class LazyMuleArtifactContext extends MuleArtifactContext
 
   private ArtifactAst buildMinimalApplicationModel(final Predicate<ComponentAst> basePredicate) {
     final Predicate<? super ComponentAst> txManagerPredicate = componentModel -> {
-      final ObjectTypeVisitor objectTypeVisitor = new ObjectTypeVisitor((ComponentModel) componentModel);
+      final ObjectTypeVisitor objectTypeVisitor = new ObjectTypeVisitor(componentModel);
       return componentBuildingDefinitionRegistry.getBuildingDefinition(componentModel.getIdentifier())
           .map(componentBuildingDefinition -> {
             componentBuildingDefinition.getTypeDefinition().visit(objectTypeVisitor);
