@@ -49,7 +49,7 @@ public class SpringComponentModel2 {
    */
   public void setObjectInstance(Object objectInstance) {
     this.objectInstance = objectInstance;
-    ((SpringComponentModel) component).setObjectInstance(objectInstance);
+    // ((SpringComponentModel) component).setObjectInstance(objectInstance);
   }
 
   /**
@@ -64,7 +64,7 @@ public class SpringComponentModel2 {
    */
   public void setType(Class<?> type) {
     this.type = type;
-    ((SpringComponentModel) component).setType(type);
+    // ((SpringComponentModel) component).setType(type);
   }
 
   /**
@@ -72,7 +72,7 @@ public class SpringComponentModel2 {
    */
   public void setBeanDefinition(BeanDefinition beanDefinition) {
     this.beanDefinition = beanDefinition;
-    ((SpringComponentModel) component).setBeanDefinition(beanDefinition);
+    // ((SpringComponentModel) component).setBeanDefinition(beanDefinition);
   }
 
   /**
@@ -87,7 +87,7 @@ public class SpringComponentModel2 {
    */
   public void setBeanReference(BeanReference beanReference) {
     this.beanReference = beanReference;
-    ((SpringComponentModel) component).setBeanReference(beanReference);
+    // ((SpringComponentModel) component).setBeanReference(beanReference);
   }
 
   /**

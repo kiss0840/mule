@@ -16,7 +16,6 @@ import static java.util.Optional.of;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.mule.runtime.api.component.AbstractComponent.ROOT_CONTAINER_NAME_KEY;
-import static org.mule.runtime.api.component.ComponentIdentifier.buildFromStringRepresentation;
 import static org.mule.runtime.api.i18n.I18nMessageFactory.createStaticMessage;
 import static org.mule.runtime.api.util.Preconditions.checkArgument;
 import static org.mule.runtime.api.util.Preconditions.checkState;
@@ -67,7 +66,6 @@ import org.mule.runtime.config.api.dsl.model.ComponentBuildingDefinitionRegistry
 import org.mule.runtime.config.api.dsl.model.ResourceProvider;
 import org.mule.runtime.config.api.dsl.processor.ArtifactConfig;
 import org.mule.runtime.config.internal.dsl.model.ClassLoaderResourceProvider;
-import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
 import org.mule.runtime.config.internal.dsl.model.SpringComponentModel2;
 import org.mule.runtime.config.internal.dsl.model.config.DefaultConfigurationPropertiesResolver;
 import org.mule.runtime.config.internal.dsl.model.config.EnvironmentPropertiesConfigurationProvider;
@@ -442,46 +440,43 @@ public class MuleArtifactContext extends AbstractRefreshableConfigApplicationCon
   private void registerErrorTypes() {
     Set<String> syntheticErrorNamespaces = new HashSet<>();
 
-    applicationModel.recursiveStream().forEach(cm -> {
-      SpringComponentModel componentModel = (SpringComponentModel) cm;
-      resolveErrorTypes(componentModel, syntheticErrorNamespaces);
-    });
+    applicationModel.recursiveStream()
+        .forEach(componentModel -> resolveErrorTypes(componentModel, syntheticErrorNamespaces));
   }
 
-  private void resolveErrorTypes(SpringComponentModel componentModel, Set<String> syntheticErrorNamespaces) {
-    List<ComponentModel> innerComponents = componentModel.getInnerComponents();
-    if (!innerComponents.isEmpty()) {
-      for (ComponentModel innerComponent : innerComponents) {
-        processRaiseError(innerComponent, syntheticErrorNamespaces);
-        resolveErrorTypes((SpringComponentModel) innerComponent, syntheticErrorNamespaces);
-      }
-    }
+  private void resolveErrorTypes(ComponentAst componentModel, Set<String> syntheticErrorNamespaces) {
+    componentModel.directChildrenStream()
+        .forEach(innerComponent -> {
+          processRaiseError(innerComponent, syntheticErrorNamespaces);
+          resolveErrorTypes(innerComponent, syntheticErrorNamespaces);
+        });
 
     componentBuildingDefinitionRegistry.getBuildingDefinition(componentModel.getIdentifier())
         .ifPresent(componentBuildingDefinition -> registerErrorMappings(componentModel, syntheticErrorNamespaces));
   }
 
-  private void registerErrorMappings(SpringComponentModel componentModel, Set<String> syntheticErrorNamespaces) {
-    List<ComponentModel> errorMappingComponents = componentModel.getInnerComponents().stream()
+  private void registerErrorMappings(ComponentAst componentModel, Set<String> syntheticErrorNamespaces) {
+    List<ComponentAst> errorMappingComponents = componentModel.directChildrenStream()
         .filter(innerComponent -> ERROR_MAPPING_IDENTIFIER.equals(innerComponent.getIdentifier())).collect(toList());
     if (!errorMappingComponents.isEmpty()) {
       errorMappingComponents.stream().forEach(innerComponent -> {
-        Map<String, String> parameters = innerComponent.getRawParameters();
-        ComponentIdentifier source = parameters.containsKey(SOURCE_TYPE)
-            ? buildFromStringRepresentation(parameters.get(SOURCE_TYPE)) : ANY;
+        ComponentIdentifier source = innerComponent.getRawParameterValue(SOURCE_TYPE)
+            .map(ComponentIdentifier::buildFromStringRepresentation)
+            .orElse(ANY);
 
         if (!muleContext.getErrorTypeRepository().lookupErrorType(source).isPresent()) {
           throw new MuleRuntimeException(createStaticMessage("Could not find error '%s'.", source));
         }
 
-        resolveErrorType(parameters.get(TARGET_TYPE), syntheticErrorNamespaces, !disableXmlValidations);
+        resolveErrorType(innerComponent.getRawParameterValue(TARGET_TYPE).orElse(null), syntheticErrorNamespaces,
+                         !disableXmlValidations);
       });
     }
   }
 
-  private void processRaiseError(ComponentModel componentModel, Set<String> syntheticErrorNamespaces) {
+  private void processRaiseError(ComponentAst componentModel, Set<String> syntheticErrorNamespaces) {
     if (componentModel.getIdentifier().equals(RAISE_ERROR_IDENTIFIER)) {
-      String representation = componentModel.getRawParameters().get("type");
+      String representation = componentModel.getRawParameterValue("type").orElse(null);
       if (isEmpty(representation) && disableXmlValidations) {
         // We can just ignore this as we should allow an empty value here
         return;
@@ -572,20 +567,20 @@ public class MuleArtifactContext extends AbstractRefreshableConfigApplicationCon
     List<Pair<String, ComponentAst>> createdComponentModels = new ArrayList<>();
 
     applicationModel.recursiveStream().forEach(cm -> {
-      SpringComponentModel componentModel = (SpringComponentModel) cm;
+      ComponentModel componentModel = (ComponentModel) cm;
       if (!mustBeRoot || componentModel.isRoot()) {
-        if (beanDefinitionFactory.isComponentIgnored(componentModel.getIdentifier())) {
+        if (beanDefinitionFactory.isComponentIgnored(cm.getIdentifier())) {
           return;
         }
 
-        componentModel.getComponentId()
+        cm.getComponentId()
             .ifPresent(componentName -> {
               if (componentModel.isRoot()) {
-                createdComponentModels.add(new Pair<>(componentName, componentModel));
+                createdComponentModels.add(new Pair<>(componentName, cm));
               }
             });
 
-        beanDefinitionFactory.resolveComponentRecursively(springComponentModels, null, componentModel, beanFactory,
+        beanDefinitionFactory.resolveComponentRecursively(springComponentModels, null, cm, beanFactory,
                                                           componentLocator);
 
         componentLocator.addComponentLocation(cm.getLocation());
